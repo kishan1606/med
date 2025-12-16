@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Report PDF Processor</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>📄 Medical Report PDF Processor</h1>
+            <p class="subtitle">Extract, split, and deduplicate medical reports from scanned PDFs</p>
+            <div class="health-status" id="healthStatus">
+                <span class="status-dot"></span>
+                <span>Checking status...</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Upload Section -->
+            <section class="card upload-section">
+                <h2>1. Upload PDF</h2>
+                <div class="upload-area" id="uploadArea">
+                    <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p>Drag and drop your PDF file here or click to browse</p>
+                    <p class="upload-hint">Maximum file size: 100 MB</p>
+                    <input type="file" id="fileInput" accept=".pdf" hidden>
+                </div>
+                <div id="uploadedFile" class="uploaded-file" style="display: none;">
+                    <div class="file-info">
+                        <span class="file-name" id="fileName"></span>
+                        <span class="file-size" id="fileSize"></span>
+                    </div>
+                    <button class="btn-remove" id="removeFile">Remove</button>
+                </div>
+            </section>
+
+            <!-- Configuration Section -->
+            <section class="card config-section">
+                <div class="section-header">
+                    <h2>2. Configuration (Optional)</h2>
+                    <button class="btn-toggle" id="toggleConfig">Show Options</button>
+                </div>
+
+                <!-- Config Preset Selector -->
+                <div class="config-preset-section" style="margin-top: 1rem; padding: 1rem; background: var(--bg-secondary, #f8f9fa); border-radius: 8px;">
+                    <div class="form-group">
+                        <label for="configPreset" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">
+                            📋 Configuration Preset:
+                        </label>
+                        <select id="configPreset" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                            <option value="current">Current (Default)</option>
+                            <option value="optimized" disabled>Optimized (Not Available)</option>
+                            <option value="tuned" disabled>Tuned (Not Available)</option>
+                        </select>
+                        <small class="help-text" id="presetDescription" style="display: block; margin-top: 0.5rem; color: #666;">
+                            Current default configuration from config.py
+                        </small>
+                        <div id="presetMetadata" style="margin-top: 0.5rem; padding: 0.5rem; background: #e8f4f8; border-left: 3px solid #0066cc; border-radius: 4px; display: none;">
+                            <small style="color: #0066cc;"></small>
+                        </div>
+                    </div>
+                    <button class="btn-secondary" id="loadPreset" style="margin-top: 0.5rem; width: 100%;">
+                        Load Selected Preset
+                    </button>
+                </div>
+
+                <div class="config-content" id="configContent" style="display: none;">
+                    <!-- PDF Settings -->
+                    <div class="config-group">
+                        <h3>PDF Settings</h3>
+                        <div class="form-group">
+                            <label for="pdfDpi">DPI (Resolution):</label>
+                            <input type="number" id="pdfDpi" value="200" min="72" max="600">
+                        </div>
+                    </div>
+
+                    <!-- Blank Detection Settings -->
+                    <div class="config-group">
+                        <h3>Blank Page Detection</h3>
+                        <div class="form-group">
+                            <label for="varianceThreshold">Variance Threshold:</label>
+                            <input type="number" id="varianceThreshold" value="100" min="0" max="500" step="10">
+                            <small class="help-text">Measures pixel variation (50-200 recommended)</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="edgeThreshold">Edge Threshold:</label>
+                            <input type="number" id="edgeThreshold" value="50" min="0" max="200" step="5">
+                            <small class="help-text">Edge count threshold (30-100 recommended)</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="whitePixelRatio">White Pixel Ratio:</label>
+                            <input type="number" id="whitePixelRatio" value="0.95" min="0" max="1" step="0.05">
+                            <small class="help-text">% white pixels to classify as blank (0.90-0.97)</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="useEdgeDetection">
+                                <input type="checkbox" id="useEdgeDetection" checked>
+                                Use Edge Detection (more accurate)
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Report Splitting Settings -->
+                    <div class="config-group">
+                        <h3>Report Splitting</h3>
+                        <div class="form-group">
+                            <label for="enableReportSplitting">
+                                <input type="checkbox" id="enableReportSplitting" checked>
+                                <strong>Enable Report Splitting</strong>
+                            </label>
+                            <small class="help-text">Split PDF into individual reports. Uncheck to treat entire PDF as one report.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="useOcr">
+                                <input type="checkbox" id="useOcr" checked>
+                                Enable OCR for header detection
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="ocrLanguage">OCR Language:</label>
+                            <select id="ocrLanguage">
+                                <option value="eng" selected>English</option>
+                                <option value="spa">Spanish</option>
+                                <option value="fra">French</option>
+                                <option value="deu">German</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="minConfidence">Minimum OCR Confidence:</label>
+                            <input type="number" id="minConfidence" value="60" min="0" max="100" step="5">
+                            <small class="help-text">0-100 (50 for poor scans, 75 for high quality)</small>
+                        </div>
+                    </div>
+
+                    <!-- Duplicate Detection Settings -->
+                    <div class="config-group">
+                        <h3>Duplicate Detection</h3>
+                        <div class="form-group">
+                            <label for="enableDuplicateDetection">
+                                <input type="checkbox" id="enableDuplicateDetection" checked>
+                                <strong>Enable Duplicate Detection</strong>
+                            </label>
+                            <small class="help-text">Detect and remove duplicate reports. Uncheck to keep all reports even if duplicated.</small>
+                            <small class="help-text" style="color: #666; font-style: italic;">Note: Requires Report Splitting to be enabled</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="hashAlgorithm">Hash Algorithm:</label>
+                            <select id="hashAlgorithm">
+                                <option value="phash" selected>pHash (most accurate)</option>
+                                <option value="dhash">dHash (faster)</option>
+                                <option value="whash">wHash (wavelet)</option>
+                                <option value="average_hash">Average Hash (fastest)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="similarityThreshold">Similarity Threshold:</label>
+                            <input type="number" id="similarityThreshold" value="0.95" min="0" max="1" step="0.01">
+                            <small class="help-text">0.0-1.0 (0.90 = lenient, 0.97 = strict)</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="hammingDistance">Hamming Distance Threshold:</label>
+                            <input type="number" id="hammingDistance" value="5" min="0" max="20">
+                            <small class="help-text">Max bit differences (3 = strict, 10 = lenient)</small>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Process Button -->
+            <div class="action-section">
+                <button class="btn-primary btn-process" id="processBtn" disabled>
+                    Process PDF
+                </button>
+            </div>
+
+            <!-- Progress Section -->
+            <section class="card progress-section" id="progressSection" style="display: none;">
+                <h2>Processing</h2>
+                <div class="progress-info">
+                    <span id="progressStatus" style="font-weight: 600; font-size: 1.1em;">Initializing...</span>
+                    <span id="progressStep" style="color: #666; font-size: 0.9em;">Step 0 of 5</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <p class="progress-detail" id="progressDetail" style="margin-top: 0.5rem; color: #666;"></p>
+            </section>
+
+            <!-- Results Section -->
+            <section class="card results-section" id="resultsSection" style="display: none;">
+                <h2>Results</h2>
+                <div id="resultsSummary" class="results-summary"></div>
+                <div id="reportsContainer" class="reports-container"></div>
+            </section>
+
+            <!-- Jobs History Section -->
+            <section class="card jobs-section">
+                <div class="section-header">
+                    <h2>Processing History</h2>
+                    <button class="btn-secondary" id="refreshJobs">Refresh</button>
+                </div>
+                <div id="jobsContainer" class="jobs-container"></div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Medical Report PDF Processor v1.0.0</p>
+            <p><a href="/docs" target="_blank">API Documentation</a></p>
+        </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

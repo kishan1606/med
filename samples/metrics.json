@@ -1,0 +1,743 @@
+[
+  {
+    "filename": "TEST_123_page_0001.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 1,
+    "metrics": {
+      "variance": 3486.2200613837745,
+      "edge_count": 124368,
+      "white_ratio": 0.9431551261122424,
+      "mean_pixel": 240.50455715862182,
+      "std_dev": 59.04422123615294
+    }
+  },
+  {
+    "filename": "TEST_123_page_0002.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 2,
+    "metrics": {
+      "variance": 3106.2078021993393,
+      "edge_count": 118434,
+      "white_ratio": 0.9497005231482506,
+      "mean_pixel": 242.1736334028039,
+      "std_dev": 55.73336345672437
+    }
+  },
+  {
+    "filename": "TEST_123_page_0003.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 3,
+    "metrics": {
+      "variance": 2257.7152700862343,
+      "edge_count": 79143,
+      "white_ratio": 0.9639819749165922,
+      "mean_pixel": 245.815403603731,
+      "std_dev": 47.5154213922831
+    }
+  },
+  {
+    "filename": "TEST_123_page_0004.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 4,
+    "metrics": {
+      "variance": 3572.5714237087986,
+      "edge_count": 131002,
+      "white_ratio": 0.9416542698317436,
+      "mean_pixel": 240.1218388070946,
+      "std_dev": 59.770991490093245
+    }
+  },
+  {
+    "filename": "TEST_123_page_0005.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 5,
+    "metrics": {
+      "variance": 4005.5379400275233,
+      "edge_count": 152108,
+      "white_ratio": 0.9340507247773003,
+      "mean_pixel": 238.1829348182116,
+      "std_dev": 63.289319320304934
+    }
+  },
+  {
+    "filename": "TEST_123_page_0006.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 6,
+    "metrics": {
+      "variance": 3887.3046193593864,
+      "edge_count": 148101,
+      "white_ratio": 0.9361402372028437,
+      "mean_pixel": 238.71576048672515,
+      "std_dev": 62.348252737020516
+    }
+  },
+  {
+    "filename": "TEST_123_page_0007.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 7,
+    "metrics": {
+      "variance": 4950.847074599529,
+      "edge_count": 193033,
+      "white_ratio": 0.9169681110341465,
+      "mean_pixel": 233.8268683137074,
+      "std_dev": 70.36225603688052
+    }
+  },
+  {
+    "filename": "TEST_123_page_0008.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 8,
+    "metrics": {
+      "variance": 3617.626264605314,
+      "edge_count": 134670,
+      "white_ratio": 0.9408691519673343,
+      "mean_pixel": 239.92163375167027,
+      "std_dev": 60.14670618251106
+    }
+  },
+  {
+    "filename": "TEST_123_page_0009.png",
+    "category": "blank",
+    "source_pdf": "TEST_123",
+    "page_num": 9,
+    "metrics": {
+      "variance": 238.82976533025223,
+      "edge_count": 12386,
+      "white_ratio": 0.9929403743315508,
+      "mean_pixel": 253.79686042780747,
+      "std_dev": 15.454118070283151
+    }
+  },
+  {
+    "filename": "TEST_123_page_0010.png",
+    "category": "blank",
+    "source_pdf": "TEST_123",
+    "page_num": 10,
+    "metrics": {
+      "variance": 238.82976533025223,
+      "edge_count": 12386,
+      "white_ratio": 0.9929403743315508,
+      "mean_pixel": 253.79686042780747,
+      "std_dev": 15.454118070283151
+    }
+  },
+  {
+    "filename": "TEST_123_page_0011.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 11,
+    "metrics": {
+      "variance": 3367.7049458799797,
+      "edge_count": 126574,
+      "white_ratio": 0.9452067769762613,
+      "mean_pixel": 241.02772812894665,
+      "std_dev": 58.031930399392884
+    }
+  },
+  {
+    "filename": "TEST_123_page_0012.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 12,
+    "metrics": {
+      "variance": 1689.9152050649764,
+      "edge_count": 59789,
+      "white_ratio": 0.9732983205032895,
+      "mean_pixel": 248.1910717283388,
+      "std_dev": 41.10857824183386
+    }
+  },
+  {
+    "filename": "TEST_123_page_0013.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 13,
+    "metrics": {
+      "variance": 4879.302634303111,
+      "edge_count": 304386,
+      "white_ratio": 0.9182853883882742,
+      "mean_pixel": 234.16277403900992,
+      "std_dev": 69.85200522750303
+    }
+  },
+  {
+    "filename": "TEST_123_page_0014.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 14,
+    "metrics": {
+      "variance": 3219.3536817141035,
+      "edge_count": 203855,
+      "white_ratio": 0.9477616820653207,
+      "mean_pixel": 241.67922892665678,
+      "std_dev": 56.739348619050105
+    }
+  },
+  {
+    "filename": "TEST_123_page_0015.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 15,
+    "metrics": {
+      "variance": 3513.42751301976,
+      "edge_count": 235071,
+      "white_ratio": 0.9426827877267024,
+      "mean_pixel": 240.38411087030912,
+      "std_dev": 59.27417239422041
+    }
+  },
+  {
+    "filename": "TEST_123_page_0016.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 16,
+    "metrics": {
+      "variance": 2000.2522698555035,
+      "edge_count": 142975,
+      "white_ratio": 0.9682293448918292,
+      "mean_pixel": 246.89848294741645,
+      "std_dev": 44.724179923789585
+    }
+  },
+  {
+    "filename": "TEST_123_page_0017.png",
+    "category": "blank",
+    "source_pdf": "TEST_123",
+    "page_num": 17,
+    "metrics": {
+      "variance": 238.82976533025223,
+      "edge_count": 12386,
+      "white_ratio": 0.9929403743315508,
+      "mean_pixel": 253.79686042780747,
+      "std_dev": 15.454118070283151
+    }
+  },
+  {
+    "filename": "TEST_123_page_0018.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 18,
+    "metrics": {
+      "variance": 4136.8392102603975,
+      "edge_count": 377763,
+      "white_ratio": 0.9317184137485267,
+      "mean_pixel": 237.5881955058743,
+      "std_dev": 64.31826498173281
+    }
+  },
+  {
+    "filename": "TEST_123_page_0019.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 19,
+    "metrics": {
+      "variance": 2961.139679978538,
+      "edge_count": 276659,
+      "white_ratio": 0.9521742139082164,
+      "mean_pixel": 242.8044245465952,
+      "std_dev": 54.416354894264444
+    }
+  },
+  {
+    "filename": "TEST_123_page_0020.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 20,
+    "metrics": {
+      "variance": 4015.799358191249,
+      "edge_count": 418808,
+      "white_ratio": 0.9338689023231056,
+      "mean_pixel": 238.13657009239193,
+      "std_dev": 63.37033500141252
+    }
+  },
+  {
+    "filename": "TEST_123_page_0021.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 21,
+    "metrics": {
+      "variance": 3599.533929780233,
+      "edge_count": 323952,
+      "white_ratio": 0.9411845937416828,
+      "mean_pixel": 240.0020714041291,
+      "std_dev": 59.99611595578695
+    }
+  },
+  {
+    "filename": "TEST_123_page_0022.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 22,
+    "metrics": {
+      "variance": 3088.1134165214708,
+      "edge_count": 258085,
+      "white_ratio": 0.9500098095129462,
+      "mean_pixel": 242.2525014258013,
+      "std_dev": 55.570796435911106
+    }
+  },
+  {
+    "filename": "TEST_123_page_0023.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 23,
+    "metrics": {
+      "variance": 3242.033268330302,
+      "edge_count": 275340,
+      "white_ratio": 0.9473720390859663,
+      "mean_pixel": 241.57986996692142,
+      "std_dev": 56.93885552353772
+    }
+  },
+  {
+    "filename": "TEST_123_page_0024.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 24,
+    "metrics": {
+      "variance": 4872.914867861732,
+      "edge_count": 418230,
+      "white_ratio": 0.9184027983726855,
+      "mean_pixel": 234.1927135850348,
+      "std_dev": 69.80626668044734
+    }
+  },
+  {
+    "filename": "TEST_123_page_0025.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 25,
+    "metrics": {
+      "variance": 4843.899154606947,
+      "edge_count": 405038,
+      "white_ratio": 0.918935705866697,
+      "mean_pixel": 234.32860499600775,
+      "std_dev": 69.5981260854554
+    }
+  },
+  {
+    "filename": "TEST_123_page_0026.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 26,
+    "metrics": {
+      "variance": 409.91734090266044,
+      "edge_count": 37555,
+      "white_ratio": 0.9936557545340481,
+      "mean_pixel": 253.38221740618226,
+      "std_dev": 20.246415507508
+    }
+  },
+  {
+    "filename": "TEST_123_page_0027.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 27,
+    "metrics": {
+      "variance": 4413.767209146034,
+      "edge_count": 376073,
+      "white_ratio": 0.9267575377362077,
+      "mean_pixel": 236.32317212273298,
+      "std_dev": 66.43618900227521
+    }
+  },
+  {
+    "filename": "TEST_123_page_0028.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 28,
+    "metrics": {
+      "variance": 4136.8392102603975,
+      "edge_count": 377763,
+      "white_ratio": 0.9317184137485267,
+      "mean_pixel": 237.5881955058743,
+      "std_dev": 64.31826498173281
+    }
+  },
+  {
+    "filename": "TEST_123_page_0029.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 29,
+    "metrics": {
+      "variance": 2961.139679978538,
+      "edge_count": 276659,
+      "white_ratio": 0.9521742139082164,
+      "mean_pixel": 242.8044245465952,
+      "std_dev": 54.416354894264444
+    }
+  },
+  {
+    "filename": "TEST_123_page_0030.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 30,
+    "metrics": {
+      "variance": 4015.799358191249,
+      "edge_count": 418808,
+      "white_ratio": 0.9338689023231056,
+      "mean_pixel": 238.13657009239193,
+      "std_dev": 63.37033500141252
+    }
+  },
+  {
+    "filename": "TEST_123_page_0031.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 31,
+    "metrics": {
+      "variance": 3599.533929780233,
+      "edge_count": 323952,
+      "white_ratio": 0.9411845937416828,
+      "mean_pixel": 240.0020714041291,
+      "std_dev": 59.99611595578695
+    }
+  },
+  {
+    "filename": "TEST_123_page_0032.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 32,
+    "metrics": {
+      "variance": 3088.1134165214708,
+      "edge_count": 258085,
+      "white_ratio": 0.9500098095129462,
+      "mean_pixel": 242.2525014258013,
+      "std_dev": 55.570796435911106
+    }
+  },
+  {
+    "filename": "TEST_123_page_0033.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 33,
+    "metrics": {
+      "variance": 3242.033268330302,
+      "edge_count": 275340,
+      "white_ratio": 0.9473720390859663,
+      "mean_pixel": 241.57986996692142,
+      "std_dev": 56.93885552353772
+    }
+  },
+  {
+    "filename": "TEST_123_page_0034.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 34,
+    "metrics": {
+      "variance": 4872.914867861732,
+      "edge_count": 418230,
+      "white_ratio": 0.9184027983726855,
+      "mean_pixel": 234.1927135850348,
+      "std_dev": 69.80626668044734
+    }
+  },
+  {
+    "filename": "TEST_123_page_0035.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 35,
+    "metrics": {
+      "variance": 4843.899154606947,
+      "edge_count": 405038,
+      "white_ratio": 0.918935705866697,
+      "mean_pixel": 234.32860499600775,
+      "std_dev": 69.5981260854554
+    }
+  },
+  {
+    "filename": "TEST_123_page_0036.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 36,
+    "metrics": {
+      "variance": 409.91734090266044,
+      "edge_count": 37555,
+      "white_ratio": 0.9936557545340481,
+      "mean_pixel": 253.38221740618226,
+      "std_dev": 20.246415507508
+    }
+  },
+  {
+    "filename": "TEST_123_page_0037.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 37,
+    "metrics": {
+      "variance": 4413.767209146034,
+      "edge_count": 376073,
+      "white_ratio": 0.9267575377362077,
+      "mean_pixel": 236.32317212273298,
+      "std_dev": 66.43618900227521
+    }
+  },
+  {
+    "filename": "TEST_123_page_0038.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 38,
+    "metrics": {
+      "variance": 4879.302634303111,
+      "edge_count": 304386,
+      "white_ratio": 0.9182853883882742,
+      "mean_pixel": 234.16277403900992,
+      "std_dev": 69.85200522750303
+    }
+  },
+  {
+    "filename": "TEST_123_page_0039.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 39,
+    "metrics": {
+      "variance": 3219.3536817141035,
+      "edge_count": 203855,
+      "white_ratio": 0.9477616820653207,
+      "mean_pixel": 241.67922892665678,
+      "std_dev": 56.739348619050105
+    }
+  },
+  {
+    "filename": "TEST_123_page_0040.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 40,
+    "metrics": {
+      "variance": 3513.42751301976,
+      "edge_count": 235071,
+      "white_ratio": 0.9426827877267024,
+      "mean_pixel": 240.38411087030912,
+      "std_dev": 59.27417239422041
+    }
+  },
+  {
+    "filename": "TEST_123_page_0041.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 41,
+    "metrics": {
+      "variance": 2000.2522698555035,
+      "edge_count": 142975,
+      "white_ratio": 0.9682293448918292,
+      "mean_pixel": 246.89848294741645,
+      "std_dev": 44.724179923789585
+    }
+  },
+  {
+    "filename": "TEST_123_page_0042.png",
+    "category": "blank",
+    "source_pdf": "TEST_123",
+    "page_num": 42,
+    "metrics": {
+      "variance": 238.82976533025223,
+      "edge_count": 12386,
+      "white_ratio": 0.9929403743315508,
+      "mean_pixel": 253.79686042780747,
+      "std_dev": 15.454118070283151
+    }
+  },
+  {
+    "filename": "TEST_123_page_0043.png",
+    "category": "blank",
+    "source_pdf": "TEST_123",
+    "page_num": 43,
+    "metrics": {
+      "variance": 238.82976533025223,
+      "edge_count": 12386,
+      "white_ratio": 0.9929403743315508,
+      "mean_pixel": 253.79686042780747,
+      "std_dev": 15.454118070283151
+    }
+  },
+  {
+    "filename": "TEST_123_page_0044.png",
+    "category": "blank",
+    "source_pdf": "TEST_123",
+    "page_num": 44,
+    "metrics": {
+      "variance": 238.82976533025223,
+      "edge_count": 12386,
+      "white_ratio": 0.9929403743315508,
+      "mean_pixel": 253.79686042780747,
+      "std_dev": 15.454118070283151
+    }
+  },
+  {
+    "filename": "TEST_123_page_0045.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 45,
+    "metrics": {
+      "variance": 3486.2200613837745,
+      "edge_count": 124368,
+      "white_ratio": 0.9431551261122424,
+      "mean_pixel": 240.50455715862182,
+      "std_dev": 59.04422123615294
+    }
+  },
+  {
+    "filename": "TEST_123_page_0046.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 46,
+    "metrics": {
+      "variance": 3106.2078021993393,
+      "edge_count": 118434,
+      "white_ratio": 0.9497005231482506,
+      "mean_pixel": 242.1736334028039,
+      "std_dev": 55.73336345672437
+    }
+  },
+  {
+    "filename": "TEST_123_page_0047.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 47,
+    "metrics": {
+      "variance": 2257.7152700862343,
+      "edge_count": 79143,
+      "white_ratio": 0.9639819749165922,
+      "mean_pixel": 245.815403603731,
+      "std_dev": 47.5154213922831
+    }
+  },
+  {
+    "filename": "TEST_123_page_0048.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 48,
+    "metrics": {
+      "variance": 3572.5714237087986,
+      "edge_count": 131002,
+      "white_ratio": 0.9416542698317436,
+      "mean_pixel": 240.1218388070946,
+      "std_dev": 59.770991490093245
+    }
+  },
+  {
+    "filename": "TEST_123_page_0049.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 49,
+    "metrics": {
+      "variance": 4005.5379400275233,
+      "edge_count": 152108,
+      "white_ratio": 0.9340507247773003,
+      "mean_pixel": 238.1829348182116,
+      "std_dev": 63.289319320304934
+    }
+  },
+  {
+    "filename": "TEST_123_page_0050.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 50,
+    "metrics": {
+      "variance": 3887.3046193593864,
+      "edge_count": 148101,
+      "white_ratio": 0.9361402372028437,
+      "mean_pixel": 238.71576048672515,
+      "std_dev": 62.348252737020516
+    }
+  },
+  {
+    "filename": "TEST_123_page_0051.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 51,
+    "metrics": {
+      "variance": 4950.847074599529,
+      "edge_count": 193033,
+      "white_ratio": 0.9169681110341465,
+      "mean_pixel": 233.8268683137074,
+      "std_dev": 70.36225603688052
+    }
+  },
+  {
+    "filename": "TEST_123_page_0052.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 52,
+    "metrics": {
+      "variance": 3617.626264605314,
+      "edge_count": 134670,
+      "white_ratio": 0.9408691519673343,
+      "mean_pixel": 239.92163375167027,
+      "std_dev": 60.14670618251106
+    }
+  },
+  {
+    "filename": "TEST_123_page_0053.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 53,
+    "metrics": {
+      "variance": 3367.7049458799797,
+      "edge_count": 126574,
+      "white_ratio": 0.9452067769762613,
+      "mean_pixel": 241.02772812894665,
+      "std_dev": 58.031930399392884
+    }
+  },
+  {
+    "filename": "TEST_123_page_0054.png",
+    "category": "non_blank",
+    "source_pdf": "TEST_123",
+    "page_num": 54,
+    "metrics": {
+      "variance": 1689.9152050649764,
+      "edge_count": 59789,
+      "white_ratio": 0.9732983205032895,
+      "mean_pixel": 248.1910717283388,
+      "std_dev": 41.10857824183386
+    }
+  },
+  {
+    "filename": "TEST_123_page_0055.png",
+    "category": "blank",
+    "source_pdf": "TEST_123",
+    "page_num": 55,
+    "metrics": {
+      "variance": 238.82976533025223,
+      "edge_count": 12386,
+      "white_ratio": 0.9929403743315508,
+      "mean_pixel": 253.79686042780747,
+      "std_dev": 15.454118070283151
+    }
+  },
+  {
+    "filename": "TEST_123_page_0056.png",
+    "category": "blank",
+    "source_pdf": "TEST_123",
+    "page_num": 56,
+    "metrics": {
+      "variance": 238.82976533025223,
+      "edge_count": 12386,
+      "white_ratio": 0.9929403743315508,
+      "mean_pixel": 253.79686042780747,
+      "std_dev": 15.454118070283151
+    }
+  },
+  {
+    "filename": "TEST_123_page_0057.png",
+    "category": "blank",
+    "source_pdf": "TEST_123",
+    "page_num": 57,
+    "metrics": {
+      "variance": 238.82976533025223,
+      "edge_count": 12386,
+      "white_ratio": 0.9929403743315508,
+      "mean_pixel": 253.79686042780747,
+      "std_dev": 15.454118070283151
+    }
+  }
+]

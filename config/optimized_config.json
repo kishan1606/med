@@ -1,0 +1,47 @@
+{
+  "blank_detection": {
+    "variance_threshold": 238.83,
+    "edge_threshold": 12386,
+    "white_pixel_ratio": 0.9929,
+    "use_edge_detection": true,
+    "canny_low": 50,
+    "canny_high": 150
+  },
+  "optimization_metadata": {
+    "overall_confidence": 0.988,
+    "sample_count": {
+      "blank": 9,
+      "non_blank": 48
+    },
+    "parameter_details": {
+      "variance_threshold": {
+        "value": 238.83,
+        "accuracy": 1.0,
+        "justification": "Accuracy: 100.0%, Precision: 100.0%, Recall: 100.0%, F1: 1.000",
+        "distribution": {
+          "blank_p95": 238.83,
+          "non_blank_p5": 1689.92
+        }
+      },
+      "white_pixel_ratio": {
+        "value": 0.9929,
+        "accuracy": 0.9649122807017544,
+        "justification": "Accuracy: 96.5%, Precision: 81.8%, Recall: 100.0%, F1: 0.900",
+        "distribution": {
+          "blank_p5": 0.9929,
+          "non_blank_p95": 0.9733
+        }
+      },
+      "edge_threshold": {
+        "value": 12386,
+        "accuracy": 1.0,
+        "justification": "Accuracy: 100.0%, Precision: 100.0%, Recall: 100.0%, F1: 1.000",
+        "distribution": {
+          "blank_p95": 12386,
+          "non_blank_p5": 59789
+        }
+      },
+      "overall_confidence": 0.988
+    }
+  }
+}

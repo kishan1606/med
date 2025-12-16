@@ -1,0 +1,35 @@
+# Core PDF and Image Processing
+PyMuPDF
+Pillow
+opencv-python-headless  # Using headless version for better compatibility
+numpy
+
+# Duplicate Detection
+imagehash
+
+# OCR (optional, for pattern detection)
+pytesseract
+
+# PDF Generation
+img2pdf
+
+# Utilities
+python-dotenv
+tqdm
+
+# Visualization (for parameter optimization tools)
+matplotlib
+seaborn
+
+# Web Framework and API
+fastapi
+uvicorn[standard]
+python-multipart  # For file uploads
+websockets  # For real-time progress updates
+aiofiles  # For async file operations
+jinja2  # For HTML templates (optional)
+
+# Testing
+pytest
+pytest-cov
+httpx  # For FastAPI testing

@@ -1,0 +1,43 @@
+# Medical Report PDF Processor - Docker Compose (Production)
+
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: med-report-processor:latest
+    container_name: med-report-processor-prod
+    ports:
+      - "8000:8000"
+    volumes:
+      # Data directories only (no source code mounting)
+      - ./input:/app/input
+      - ./output:/app/output
+      - ./temp:/app/temp
+      - ./processing.log:/app/processing.log
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+      - TESSERACT_CMD=/usr/bin/tesseract
+      - MAX_WORKERS=4
+    restart: always
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 4G
+        reservations:
+          cpus: '2.0'
+          memory: 2G
+
+networks:
+  default:
+    name: med-report-network-prod
