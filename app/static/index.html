@@ -65,14 +65,9 @@
                             <small style="color: #0066cc;"></small>
                         </div>
                     </div>
-                    <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
-                        <button class="btn-secondary" id="loadPreset" style="flex:1;">
-                            Load Selected Preset
-                        </button>
-                        <button class="btn-secondary" id="applyOptimizedBtn" style="padding:0 0.75rem;" disabled>
-                            Apply Optimized
-                        </button>
-                    </div>
+                    <button class="btn-secondary" id="loadPreset" style="margin-top: 0.5rem; width: 100%;">
+                        Load Selected Preset
+                    </button>
                 </div>
 
                 <div class="config-content" id="configContent" style="display: none;">
@@ -90,17 +85,17 @@
                         <h3>Blank Page Detection</h3>
                         <div class="form-group">
                             <label for="varianceThreshold">Variance Threshold:</label>
-                            <input type="number" id="varianceThreshold" value="100" min="0" max="500" step="10">
+                            <input type="number" id="varianceThreshold" value="238.83" min="0" max="1000" step="0.01">
                             <small class="help-text">Measures pixel variation (50-200 recommended)</small>
                         </div>
                         <div class="form-group">
                             <label for="edgeThreshold">Edge Threshold:</label>
-                            <input type="number" id="edgeThreshold" value="50" min="0" max="200" step="5">
+                            <input type="number" id="edgeThreshold" value="12386" min="0" max="20000" step="1">
                             <small class="help-text">Edge count threshold (30-100 recommended)</small>
                         </div>
                         <div class="form-group">
                             <label for="whitePixelRatio">White Pixel Ratio:</label>
-                            <input type="number" id="whitePixelRatio" value="0.95" min="0" max="1" step="0.05">
+                            <input type="number" id="whitePixelRatio" value="0.992" min="0" max="1" step="0.001">
                             <small class="help-text">% white pixels to classify as blank (0.90-0.97)</small>
                         </div>
                         <div class="form-group">

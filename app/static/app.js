@@ -816,6 +816,21 @@ function showPageSelection(result) {
     });
 
     updateSelectionCount();
+
+    // Re-attach the generate PDF button event listener to ensure it works
+    // (in case the button was recreated or DOM was modified)
+    console.log('🔄 Re-attaching generatePdfBtn event listener');
+    const newGeneratePdfBtn = document.getElementById('generatePdfBtn');
+    if (newGeneratePdfBtn) {
+        // Remove any existing listeners by cloning the button
+        const oldBtn = newGeneratePdfBtn;
+        const newBtn = oldBtn.cloneNode(true);
+        oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+
+        // Attach fresh event listener
+        newBtn.addEventListener('click', generatePdfWithSelection);
+        console.log('✅ Event listener re-attached to generatePdfBtn');
+    }
 }
 
 function updateSelectionCount() {
@@ -823,7 +838,12 @@ function updateSelectionCount() {
     const checked = Array.from(checkboxes).filter(cb => cb.checked);
 
     selectionCount.textContent = `${checked.length} page${checked.length !== 1 ? 's' : ''} selected`;
-    generatePdfBtn.disabled = checked.length === 0;
+
+    // Get fresh reference to the button in case it was replaced
+    const btn = document.getElementById('generatePdfBtn');
+    if (btn) {
+        btn.disabled = checked.length === 0;
+    }
 
     // Update card styling
     checkboxes.forEach(checkbox => {
@@ -862,37 +882,53 @@ function selectOnlyUniques() {
 async function generatePdfWithSelection(event) {
     console.log('🔥 generatePdfWithSelection CALLED!');
     console.log('Event:', event);
-    console.log('Button element:', generatePdfBtn);
-    console.log('Button disabled?', generatePdfBtn.disabled);
+
+    // Get fresh reference to the button
+    const btn = document.getElementById('generatePdfBtn');
+    console.log('Button element:', btn);
+    console.log('Button disabled?', btn?.disabled);
 
     const checkboxes = document.querySelectorAll('.page-checkbox:checked');
     const selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.dataset.pageIndex));
 
     console.log('Generate PDF clicked - Selected indices:', selectedIndices);
+    console.log('Current job ID:', currentJobId);
 
     if (selectedIndices.length === 0) {
         alert('Please select at least one page');
         return;
     }
 
+    if (!currentJobId) {
+        alert('Job ID not found. Please re-process the PDF.');
+        console.error('currentJobId is null or undefined');
+        return;
+    }
+
     try {
-        generatePdfBtn.disabled = true;
-        generatePdfBtn.textContent = 'Generating PDF...';
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Generating PDF...';
+        }
 
         console.log('Sending request to /api/generate-pdf with job_id:', currentJobId);
+
+        const requestBody = {
+            job_id: currentJobId,
+            selected_page_indices: selectedIndices
+        };
+        console.log('Request body:', JSON.stringify(requestBody, null, 2));
 
         const response = await fetch('/api/generate-pdf', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                job_id: currentJobId,
-                selected_page_indices: selectedIndices
-            })
+            body: JSON.stringify(requestBody)
         });
 
         console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
 
         if (!response.ok) {
             const error = await response.json();
@@ -935,9 +971,12 @@ async function generatePdfWithSelection(event) {
 
     } catch (error) {
         console.error('Error generating PDF:', error);
+        console.error('Error stack:', error.stack);
         alert(`Failed to generate PDF: ${error.message}`);
     } finally {
-        generatePdfBtn.disabled = false;
-        generatePdfBtn.textContent = 'Generate PDF with Selected Pages';
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Generate PDF with Selected Pages';
+        }
     }
 }
