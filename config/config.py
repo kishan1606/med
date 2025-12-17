@@ -82,22 +82,25 @@ BLANK_DETECTION_CONFIG = {
     "canny_high": 150,  # Canny edge detection high threshold
 }
 
-# Report Splitting settings
+# Report Splitting settings - COMMENTED OUT: Report splitting disabled
+# REPORT_SPLITTING_CONFIG = {
+#     "enabled": get_env("ENABLE_REPORT_SPLITTING", False, bool),  # Disabled by default
+#     "use_ocr": get_env("USE_OCR", True, bool),
+#     "ocr_language": get_env("OCR_LANGUAGE", "eng"),
+#     "header_detection_region": (0, 0, 1.0, 0.2),  # Top 20% of page (x1, y1, x2, y2 as ratios)
+#     "footer_detection_region": (0, 0.8, 1.0, 1.0),  # Bottom 20% of page
+#     "header_keywords": [
+#         "patient name",
+#         "patient id",
+#         "medical record",
+#         "report date",
+#         "hospital",
+#         "clinic",
+#     ],
+#     "min_confidence": get_env("MIN_CONFIDENCE", 60, int),
+# }
 REPORT_SPLITTING_CONFIG = {
-    "enabled": get_env("ENABLE_REPORT_SPLITTING", True, bool),
-    "use_ocr": get_env("USE_OCR", True, bool),
-    "ocr_language": get_env("OCR_LANGUAGE", "eng"),
-    "header_detection_region": (0, 0, 1.0, 0.2),  # Top 20% of page (x1, y1, x2, y2 as ratios)
-    "footer_detection_region": (0, 0.8, 1.0, 1.0),  # Bottom 20% of page
-    "header_keywords": [
-        "patient name",
-        "patient id",
-        "medical record",
-        "report date",
-        "hospital",
-        "clinic",
-    ],
-    "min_confidence": get_env("MIN_CONFIDENCE", 60, int),
+    "enabled": False,  # Report splitting disabled
 }
 
 # Duplicate Detection settings

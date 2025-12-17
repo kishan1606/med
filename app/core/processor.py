@@ -15,12 +15,14 @@ import time
 from config.config import get_config
 from src.pdf_processor import PDFProcessor
 from src.image_analyzer import ImageAnalyzer
-from src.report_splitter import ReportSplitter
+# from src.report_splitter import ReportSplitter  # COMMENTED OUT: Report splitting disabled
 from src.duplicate_detector import DuplicateDetector
 from src.file_manager import FileManager
 
 from app.core.tasks import job_manager
-from app.api.models import ProcessingResult, ProcessingStatus, ReportInfo
+from app.api.models import ProcessingResult, ProcessingStatus, ReportInfo, PageInfo
+import base64
+from io import BytesIO
 
 logger = logging.getLogger(__name__)
 
@@ -145,9 +147,8 @@ def _process_pdf_sync(
         "total_pages": 0,
         "blank_pages": 0,
         "non_blank_pages": 0,
-        "reports_found": 0,
-        "unique_reports": 0,
-        "duplicate_reports": 0,
+        "duplicate_pages": 0,
+        "unique_pages": 0,
         "success": False,
         "error": None,
     }
@@ -173,51 +174,127 @@ def _process_pdf_sync(
         if not non_blank_pages:
             raise ValueError("No non-blank pages found in the PDF")
 
-        # Enforce dependency: If report splitting is disabled, duplicate detection must be disabled
-        report_splitting_enabled = config.get("report_splitting", {}).get("enabled", True)
+        # Check duplicate detection setting
         duplicate_detection_enabled = config.get("duplicate_detection", {}).get("enabled", True)
 
-        if not report_splitting_enabled:
-            duplicate_detection_enabled = False
-            logger.info("Duplicate detection disabled because report splitting is disabled (dependency)")
+        # Step 3: Detect and remove duplicate pages (40-70%) - conditional
+        requires_user_selection = False
+        page_infos = []
+        duplicate_map = {}  # Maps duplicate index to original index
 
-        # Step 3: Split into individual reports (40-60%) - conditional
-        if report_splitting_enabled:
-            update_progress_sync(45, "Splitting into individual reports...")
-            # Remove 'enabled' key before passing to ReportSplitter
-            splitting_config = {k: v for k, v in config["report_splitting"].items() if k != "enabled"}
-            report_splitter = ReportSplitter(**splitting_config)
-            reports = report_splitter.split_reports(non_blank_pages)
-            stats["reports_found"] = len(reports)
-            logger.info(f"Identified {len(reports)} reports")
-            update_progress_sync(60, f"Identified {len(reports)} reports")
+        if duplicate_detection_enabled:
+            update_progress_sync(45, "Detecting duplicate pages...")
+            # Remove 'enabled' key before passing to DuplicateDetector
+            dedup_config = {k: v for k, v in config["duplicate_detection"].items() if k != "enabled"}
+            duplicate_detector = DuplicateDetector(**dedup_config)
+
+            # Treat each page as a separate "report" for duplicate detection
+            page_list = [[page] for page in non_blank_pages]
+
+            # Find duplicates and get unique pages
+            unique_indices, duplicate_pairs = duplicate_detector.find_duplicates(page_list)
+
+            # Build duplicate map from duplicate_pairs
+            for idx1, idx2, similarity in duplicate_pairs:
+                duplicate_map[idx2] = idx1  # idx2 is duplicate of idx1
+
+            stats["unique_pages"] = len(unique_indices)
+            stats["duplicate_pages"] = stats["non_blank_pages"] - stats["unique_pages"]
+            logger.info(f"Found {stats['duplicate_pages']} duplicate pages")
+            update_progress_sync(65, f"Found {stats['duplicate_pages']} duplicate pages")
+
+            # If duplicates found, prepare for user selection
+            if stats["duplicate_pages"] > 0:
+                requires_user_selection = True
+                update_progress_sync(68, "Preparing page previews for user selection...")
+
+                # Save page previews and create page info
+                preview_dir = Path(output_dir) / "temp" / f"job_{job_id}"
+                preview_dir.mkdir(parents=True, exist_ok=True)
+
+                for idx, page in enumerate(non_blank_pages):
+                    is_duplicate = idx not in unique_indices
+                    duplicate_of = duplicate_map.get(idx, None)
+
+                    # Save page preview as thumbnail
+                    preview_path = preview_dir / f"page_{idx}.jpg"
+                    page_resized = page.copy()
+                    page_resized.thumbnail((300, 400))  # Thumbnail size
+                    page_resized.save(preview_path, "JPEG", quality=85)
+
+                    page_info = PageInfo(
+                        page_index=idx,
+                        page_number=idx + 1,
+                        is_duplicate=is_duplicate,
+                        duplicate_of=duplicate_of,
+                        preview_url=f"/api/preview/{job_id}/page_{idx}.jpg"
+                    )
+                    page_infos.append(page_info)
+
+                # Store non_blank_pages for later PDF generation
+                import pickle
+                pages_cache_path = preview_dir / "pages.pkl"
+                with open(pages_cache_path, 'wb') as f:
+                    pickle.dump(non_blank_pages, f)
+
+                logger.info(f"Saved {len(page_infos)} page previews for user selection")
+                update_progress_sync(70, "Page previews ready for user selection")
+            else:
+                # No duplicates, proceed normally
+                unique_pages = non_blank_pages
+                update_progress_sync(70, "No duplicate pages found")
         else:
-            update_progress_sync(45, "Skipping report splitting (disabled)...")
-            update_progress_sync(60, "Skipping duplicate detection (disabled - dependency)...")
-            logger.info("Report splitting disabled - treating as single report")
-            logger.info("Duplicate detection disabled - dependency")
+            update_progress_sync(45, "Skipping duplicate detection (disabled)...")
+            logger.info("Duplicate detection disabled - keeping all pages")
+            unique_pages = non_blank_pages
+            stats["unique_pages"] = len(unique_pages)
+            stats["duplicate_pages"] = 0
+            update_progress_sync(70, "Duplicate detection skipped")
 
-            # Save single PDF with blank pages removed
-            update_progress_sync(80, "Saving PDF with blank pages removed...")
+        # Step 4: Handle result based on whether user selection is required
+        if requires_user_selection:
+            # User needs to select pages - don't generate PDF yet
+            update_progress_sync(100, "Waiting for user to select pages...")
+
+            # Create result with page info for user selection
+            result = ProcessingResult(
+                job_id=job_id,
+                status=ProcessingStatus.COMPLETED,
+                input_file=Path(input_path).name,
+                total_pages=stats["total_pages"],
+                blank_pages=stats["blank_pages"],
+                reports_found=1,
+                duplicate_reports=stats["duplicate_pages"],
+                unique_reports=1,
+                reports=[],  # No PDF generated yet
+                pages=page_infos,  # Send page information for user selection
+                requires_user_selection=True,
+                processing_time_seconds=0,
+                error=None,
+            )
+
+            logger.info(f"Awaiting user selection: {len(page_infos)} pages, {stats['duplicate_pages']} duplicates")
+            return result
+        else:
+            # No duplicates or detection disabled - generate PDF immediately
+            update_progress_sync(75, "Saving processed PDF...")
             file_manager = FileManager(output_dir, **config["file_management"])
 
-            # Create metadata for the single cleaned PDF
+            # Create metadata for the processed PDF
             metadata = {
-                "original_page_indices": list(range(len(non_blank_pages))),
+                "original_page_indices": list(range(len(unique_pages))),
                 "total_pages": stats["total_pages"],
                 "blank_pages_removed": stats["blank_pages"],
-                "processing_mode": "blank_removal_only",
+                "duplicate_pages_removed": stats["duplicate_pages"],
+                "processing_mode": "blank_removal_and_deduplication" if duplicate_detection_enabled else "blank_removal_only",
             }
 
-            # Save as single cleaned PDF
-            saved = file_manager.save_report(non_blank_pages, 1, metadata, original_filename)
+            # Save as single processed PDF
+            saved = file_manager.save_report(unique_pages, 1, metadata, original_filename)
             saved_files = [saved]
             stats["saved_files"] = saved_files
-            stats["reports_found"] = 1
-            stats["unique_reports"] = 1
-            stats["duplicate_reports"] = 0
 
-            update_progress_sync(95, "Creating processing log...")
+            update_progress_sync(90, "Creating processing log...")
             file_manager.create_processing_log(stats)
 
             output_summary = file_manager.get_output_summary()
@@ -234,7 +311,7 @@ def _process_pdf_sync(
                 report_info = ReportInfo(
                     report_id="report_0001",
                     filename=pdf_path.name,
-                    page_count=len(non_blank_pages),
+                    page_count=len(unique_pages),
                     file_size_mb=round(file_size_mb, 2),
                     download_url=f"/api/download/{pdf_path.name}",
                 )
@@ -247,170 +324,19 @@ def _process_pdf_sync(
                 input_file=Path(input_path).name,
                 total_pages=stats["total_pages"],
                 blank_pages=stats["blank_pages"],
-                reports_found=stats["reports_found"],
-                duplicate_reports=stats["duplicate_reports"],
-                unique_reports=stats["unique_reports"],
+                reports_found=1,  # Always 1 report now
+                duplicate_reports=stats["duplicate_pages"],  # Duplicate pages, not reports
+                unique_reports=1,  # Always 1 report now
                 reports=report_infos,
+                pages=None,
+                requires_user_selection=False,
                 processing_time_seconds=0,  # Will be set by caller
                 error=None,
             )
 
-            logger.info(f"[Blank Removal Only] Returning {len(report_infos)} report(s)")
-            logger.info(f"[Blank Removal Only] Report files: {[r.filename for r in report_infos]}")
+            logger.info(f"Returning processed PDF: {report_infos[0].filename if report_infos else 'None'}")
+            logger.info(f"Total pages: {stats['total_pages']}, Blank pages removed: {stats['blank_pages']}, Duplicate pages removed: {stats['duplicate_pages']}, Final pages: {stats['unique_pages']}")
             return result
-
-        # Step 4: Detect and remove duplicates (60-80%) - conditional
-        if duplicate_detection_enabled:
-            update_progress_sync(65, "Detecting duplicate reports...")
-            # Remove 'enabled' key before passing to DuplicateDetector
-            dedup_config = {k: v for k, v in config["duplicate_detection"].items() if k != "enabled"}
-            duplicate_detector = DuplicateDetector(**dedup_config)
-            report_pages_list = [report.pages for report in reports]
-            unique_indices, duplicate_pairs = duplicate_detector.find_duplicates(report_pages_list)
-            unique_reports = [report_pages_list[i] for i in unique_indices]
-            stats["unique_reports"] = len(unique_reports)
-            stats["duplicate_reports"] = stats["reports_found"] - stats["unique_reports"]
-            logger.info(f"Found {stats['duplicate_reports']} duplicates")
-            update_progress_sync(80, f"Found {stats['duplicate_reports']} duplicates")
-        else:
-            update_progress_sync(65, "Skipping duplicate detection (disabled)...")
-            logger.info("Duplicate detection disabled - keeping all reports")
-
-            # Save all split reports without deduplication
-            update_progress_sync(80, "Saving split reports (with duplicates)...")
-            file_manager = FileManager(output_dir, **config["file_management"])
-
-            # Save all reports
-            saved_files = []
-            for idx, report in enumerate(reports):
-                progress = 80 + int((idx + 1) / len(reports) * 15)
-                update_progress_sync(progress, f"Saving report {idx + 1}/{len(reports)}...")
-                metadata = {
-                    "original_page_indices": report.page_indices,
-                    "report_number": idx + 1,
-                    "total_reports": len(reports),
-                    "processing_mode": "split_without_dedup",
-                    **report.metadata,
-                }
-                saved = file_manager.save_report(report.pages, idx + 1, metadata, original_filename)
-                saved_files.append(saved)
-
-            stats["saved_files"] = saved_files
-            stats["unique_reports"] = len(reports)
-            stats["duplicate_reports"] = 0
-
-            update_progress_sync(95, "Creating processing log...")
-            file_manager.create_processing_log(stats)
-
-            output_summary = file_manager.get_output_summary()
-            stats["output_summary"] = output_summary
-            stats["success"] = True
-
-            update_progress_sync(100, "Processing completed successfully!")
-
-            # Build report info list
-            report_infos = []
-            for idx, saved in enumerate(saved_files):
-                if "pdf" in saved:
-                    pdf_path = Path(saved["pdf"])
-                    file_size_mb = pdf_path.stat().st_size / (1024 * 1024)
-                    report_info = ReportInfo(
-                        report_id=f"report_{idx + 1:04d}",
-                        filename=pdf_path.name,
-                        page_count=len(reports[idx].pages),
-                        file_size_mb=round(file_size_mb, 2),
-                        download_url=f"/api/download/{pdf_path.name}",
-                    )
-                    report_infos.append(report_info)
-
-            # Create result
-            result = ProcessingResult(
-                job_id=job_id,
-                status=ProcessingStatus.COMPLETED,
-                input_file=Path(input_path).name,
-                total_pages=stats["total_pages"],
-                blank_pages=stats["blank_pages"],
-                reports_found=stats["reports_found"],
-                duplicate_reports=stats["duplicate_reports"],
-                unique_reports=stats["unique_reports"],
-                reports=report_infos,
-                processing_time_seconds=0,  # Will be set by caller
-                error=None,
-            )
-
-            logger.info(f"[Split Without Dedup] Returning {len(report_infos)} report(s)")
-            logger.info(f"[Split Without Dedup] Report files: {[r.filename for r in report_infos]}")
-            return result
-
-        # Step 5: Save processed reports (80-100%) - Full pipeline with deduplication
-        update_progress_sync(85, "Saving unique processed reports...")
-        file_manager = FileManager(output_dir, **config["file_management"])
-
-        # Create metadata for each report
-        reports_metadata = []
-        for idx, report_idx in enumerate(unique_indices):
-            original_report = reports[report_idx]
-            metadata = {
-                "original_page_indices": original_report.page_indices,
-                "report_number": idx + 1,
-                "total_unique_reports": len(unique_reports),
-                "processing_mode": "full_pipeline",
-                **original_report.metadata,
-            }
-            reports_metadata.append(metadata)
-
-        # Save all reports
-        saved_files = []
-        for idx, (pages, metadata) in enumerate(zip(unique_reports, reports_metadata)):
-            progress = 85 + int((idx + 1) / len(unique_reports) * 10)
-            update_progress_sync(
-                progress, f"Saving report {idx + 1}/{len(unique_reports)}..."
-            )
-            saved = file_manager.save_report(pages, idx + 1, metadata, original_filename)
-            saved_files.append(saved)
-
-        update_progress_sync(95, "Creating processing log...")
-        file_manager.create_processing_log(stats)
-
-        output_summary = file_manager.get_output_summary()
-        stats["output_summary"] = output_summary
-        stats["success"] = True
-
-        update_progress_sync(100, "Processing completed successfully!")
-
-        # Build report info list
-        report_infos = []
-        for idx, saved in enumerate(saved_files):
-            if "pdf" in saved:
-                pdf_path = Path(saved["pdf"])
-                file_size_mb = pdf_path.stat().st_size / (1024 * 1024)
-                report_info = ReportInfo(
-                    report_id=f"report_{idx + 1:04d}",
-                    filename=pdf_path.name,
-                    page_count=len(unique_reports[idx]),
-                    file_size_mb=round(file_size_mb, 2),
-                    download_url=f"/api/download/{pdf_path.name}",
-                )
-                report_infos.append(report_info)
-
-        # Create result
-        result = ProcessingResult(
-            job_id=job_id,
-            status=ProcessingStatus.COMPLETED,
-            input_file=Path(input_path).name,
-            total_pages=stats["total_pages"],
-            blank_pages=stats["blank_pages"],
-            reports_found=stats["reports_found"],
-            duplicate_reports=stats["duplicate_reports"],
-            unique_reports=stats["unique_reports"],
-            reports=report_infos,
-            processing_time_seconds=0,  # Will be set by caller
-            error=None,
-        )
-
-        logger.info(f"[Full Pipeline] Returning {len(report_infos)} report(s)")
-        logger.info(f"[Full Pipeline] Report files: {[r.filename for r in report_infos]}")
-        return result
 
     except Exception as e:
         logger.error(f"Error in synchronous processing: {e}", exc_info=True)
@@ -424,10 +350,12 @@ def _process_pdf_sync(
             input_file=Path(input_path).name,
             total_pages=stats.get("total_pages", 0),
             blank_pages=stats.get("blank_pages", 0),
-            reports_found=stats.get("reports_found", 0),
-            duplicate_reports=stats.get("duplicate_reports", 0),
-            unique_reports=stats.get("unique_reports", 0),
+            reports_found=1,
+            duplicate_reports=stats.get("duplicate_pages", 0),
+            unique_reports=1,
             reports=[],
+            pages=None,
+            requires_user_selection=False,
             processing_time_seconds=0,
             error=str(e),
         )

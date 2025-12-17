@@ -5,6 +5,7 @@ let uploadedFile = null;
 let currentJobId = null;
 let websocket = null;
 let currentPages = [];
+let originalStats = null;  // Store original processing statistics
 
 // DOM Elements
 const uploadArea = document.getElementById('uploadArea');
@@ -29,7 +30,6 @@ const refreshJobsBtn = document.getElementById('refreshJobs');
 const healthStatus = document.getElementById('healthStatus');
 const configPresetSelect = document.getElementById('configPreset');
 const loadPresetBtn = document.getElementById('loadPreset');
-const applyOptimizedBtn = document.getElementById('applyOptimizedBtn');
 const presetDescription = document.getElementById('presetDescription');
 const presetMetadata = document.getElementById('presetMetadata');
 const pageSelectionSection = document.getElementById('pageSelectionSection');
@@ -40,24 +40,13 @@ const deselectAllBtn = document.getElementById('deselectAllBtn');
 const selectUniquesBtn = document.getElementById('selectUniquesBtn');
 const selectionCount = document.getElementById('selectionCount');
 
-// Initialize (run immediately if DOM already loaded)
-function init() {
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     checkHealth();
     loadJobs();
     loadAvailableConfigs();
-
-    // Diagnostic: Make functions available globally for testing
-    window.testGeneratePdf = generatePdfWithSelection;
-    window.applyOptimizedPreset = applyOptimizedPreset;
-    console.log('🧪 Test function available: window.testGeneratePdf(), window.applyOptimizedPreset()');
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-} else {
-    init();
-}
+});
 
 function setupEventListeners() {
     // Upload area
@@ -84,18 +73,12 @@ function setupEventListeners() {
     // Config preset
     configPresetSelect.addEventListener('change', updatePresetDescription);
     loadPresetBtn.addEventListener('click', loadSelectedPreset);
-    if (applyOptimizedBtn) applyOptimizedBtn.addEventListener('click', applyOptimizedPreset);
 
     // Page selection
     selectAllBtn.addEventListener('click', selectAllPages);
     deselectAllBtn.addEventListener('click', deselectAllPages);
     selectUniquesBtn.addEventListener('click', selectOnlyUniques);
-
-    console.log('📌 Setting up generatePdfBtn event listener');
-    console.log('generatePdfBtn element:', generatePdfBtn);
-    console.log('generatePdfBtn ID:', generatePdfBtn?.id);
     generatePdfBtn.addEventListener('click', generatePdfWithSelection);
-    console.log('✅ generatePdfBtn event listener attached');
 
     // COMMENTED OUT: Report splitting disabled - no longer need dependency handling
     // const reportSplittingCheckbox = document.getElementById('enableReportSplitting');
@@ -274,7 +257,6 @@ async function startProcessing() {
     }
 
     const config = getConfiguration();
-    console.log('Starting processing with config:', config);
 
     try {
         processBtn.disabled = true;
@@ -538,17 +520,18 @@ async function loadAvailableConfigs() {
         const response = await fetch('/api/configs/list');
         const data = await response.json();
 
-        // Update existing options based on availability
+        // Update dropdown with available configs
+        configPresetSelect.innerHTML = '';
+
         data.configs.forEach(config => {
-            const option = configPresetSelect.querySelector(`option[value="${config.name}"]`);
-            if (option) {
-                option.disabled = !config.available;
-                if (!config.available) {
-                    option.textContent = config.label + ' (Not Available)';
-                } else {
-                    option.textContent = config.label;
-                }
+            const option = document.createElement('option');
+            option.value = config.name;
+            option.textContent = config.label;
+            option.disabled = !config.available;
+            if (!config.available) {
+                option.textContent += ' (Not Available)';
             }
+            configPresetSelect.appendChild(option);
         });
 
         // Update description for the default selected option
@@ -557,6 +540,9 @@ async function loadAvailableConfigs() {
     } catch (error) {
         console.error('Error loading configs:', error);
     }
+}
+
+
 }
 
 function updatePresetDescription() {
@@ -569,82 +555,6 @@ function updatePresetDescription() {
     };
 
     presetDescription.textContent = descriptions[selectedValue] || '';
-
-    // If the user selects 'optimized' from the dropdown, apply the fine-tuned values immediately
-    if (selectedValue === 'optimized') {
-        // Ensure the config panel is visible so changes are visible to the user
-        if (configContent.style.display === 'none' || configContent.style.display === '') {
-            toggleConfig();
-        }
-
-        const vElem = document.getElementById('varianceThreshold');
-        const eElem = document.getElementById('edgeThreshold');
-        const wElem = document.getElementById('whitePixelRatio');
-
-        if (vElem) vElem.value = 238.83;
-        if (eElem) eElem.value = 12386;
-        if (wElem) wElem.value = 0.992;
-
-        console.log('Applied optimized preset (selection-time override)');
-        // enable the apply button when optimized is selected
-        if (applyOptimizedBtn) applyOptimizedBtn.disabled = false;
-    } else {
-        if (applyOptimizedBtn) applyOptimizedBtn.disabled = true;
-    }
-}
-
-// Force-apply optimized values when the user clicks the Apply button
-function applyOptimizedPreset() {
-    try {
-        console.log('applyOptimizedPreset() called');
-
-        if (configContent.style.display === 'none' || configContent.style.display === '') toggleConfig();
-
-        const vElem = document.getElementById('varianceThreshold');
-        const eElem = document.getElementById('edgeThreshold');
-        const wElem = document.getElementById('whitePixelRatio');
-
-        // Use valueAsNumber for numeric inputs where possible, and fall back to .value
-        if (vElem) {
-            if (typeof vElem.valueAsNumber !== 'undefined' && !isNaN(vElem.valueAsNumber)) {
-                vElem.value = 238.83;
-            } else {
-                vElem.value = '238.83';
-            }
-            vElem.dispatchEvent(new Event('input'));
-            vElem.dispatchEvent(new Event('change'));
-        }
-
-        if (eElem) {
-            eElem.value = '12386';
-            eElem.dispatchEvent(new Event('input'));
-            eElem.dispatchEvent(new Event('change'));
-        }
-
-        if (wElem) {
-            wElem.value = '0.992';
-            wElem.dispatchEvent(new Event('input'));
-            wElem.dispatchEvent(new Event('change'));
-        }
-
-        try {
-            presetMetadata.querySelector('small').textContent = 'Optimized preset applied (manual)';
-            presetMetadata.style.display = 'block';
-        } catch (e) {
-            console.warn('presetMetadata element not available to show feedback');
-        }
-
-        // brief feedback on the button
-        if (applyOptimizedBtn) {
-            const old = applyOptimizedBtn.textContent;
-            applyOptimizedBtn.textContent = '✓ Applied';
-            setTimeout(() => applyOptimizedBtn.textContent = old, 1200);
-        }
-
-        console.log('Optimized values applied via Apply button');
-    } catch (err) {
-        console.error('Failed to apply optimized preset:', err);
-    }
 }
 
 async function loadSelectedPreset() {
@@ -654,40 +564,6 @@ async function loadSelectedPreset() {
         loadPresetBtn.disabled = true;
         loadPresetBtn.textContent = 'Loading...';
 
-        console.log(`Loading config preset: ${selectedConfig}`);
-        // If user selected the optimized preset, apply the fine-tuned values client-side
-        if (selectedConfig === 'optimized') {
-            // Ensure the config panel is visible so changes are visible to the user
-            if (configContent.style.display === 'none' || configContent.style.display === '') {
-                toggleConfig();
-            }
-
-            const vElem = document.getElementById('varianceThreshold');
-            const eElem = document.getElementById('edgeThreshold');
-            const wElem = document.getElementById('whitePixelRatio');
-
-            if (vElem) vElem.value = 238.83;
-            if (eElem) eElem.value = 12386;
-            if (wElem) wElem.value = 0.992;
-
-            // Show simple metadata / feedback
-            try {
-                presetMetadata.querySelector('small').textContent = 'Optimized preset applied (fine-tuned values)';
-                presetMetadata.style.display = 'block';
-            } catch (e) {
-                console.warn('Could not show preset metadata:', e);
-            }
-
-            loadPresetBtn.textContent = '✓ Loaded!';
-            setTimeout(() => {
-                loadPresetBtn.textContent = 'Load Selected Preset';
-                loadPresetBtn.disabled = false;
-            }, 1000);
-
-            console.log('Applied optimized preset client-side');
-            return;
-        }
-
         // Default behavior: fetch preset from server
         const response = await fetch(`/api/configs/${selectedConfig}`);
         if (!response.ok) {
@@ -696,30 +572,9 @@ async function loadSelectedPreset() {
         }
 
         const data = await response.json();
-        console.log('Loaded config data:', data);
 
-        // Expand config section FIRST so user can see the changes
-        if (configContent.style.display === 'none' || configContent.style.display === '') {
-            toggleConfig();
-        }
-
-        // Apply blank detection parameters
-        if (data.parameters && data.parameters.blank_detection) {
-            const params = data.parameters.blank_detection;
-            console.log('Applying blank detection params:', params);
-
-            document.getElementById('varianceThreshold').value = params.variance_threshold || 100;
-            document.getElementById('edgeThreshold').value = params.edge_threshold || 50;
-            document.getElementById('whitePixelRatio').value = params.white_pixel_ratio || 0.95;
-            document.getElementById('useEdgeDetection').checked = params.use_edge_detection !== false;
-        }
-
-        // Apply duplicate detection parameters
-        if (data.parameters && data.parameters.duplicate_detection) {
-            const params = data.parameters.duplicate_detection;
-            console.log('Applying duplicate detection params:', params);
-            document.getElementById('enableDuplicateDetection').checked = params.enabled !== false;
-        }
+        // Apply parameters using helper
+        applyConfigParameters(data);
 
         // Show metadata if available
         if (data.metadata) {
@@ -746,7 +601,6 @@ async function loadSelectedPreset() {
             if (metadataText) {
                 presetMetadata.querySelector('small').textContent = metadataText;
                 presetMetadata.style.display = 'block';
-                console.log('Showing metadata:', metadataText);
             } else {
                 presetMetadata.style.display = 'none';
             }
@@ -756,11 +610,93 @@ async function loadSelectedPreset() {
 
         // Show success feedback
         loadPresetBtn.textContent = '✓ Loaded!';
-        console.log('Config loaded successfully');
         setTimeout(() => {
             loadPresetBtn.textContent = 'Load Selected Preset';
             loadPresetBtn.disabled = false;
         }, 2000);
+
+        // Expand config section if collapsed
+        if (configContent.style.display === 'none') {
+            toggleConfig();
+        }
+}
+
+// Apply parameters object to the UI fields (used by server presets)
+function applyConfigParameters(data) {
+    if (!data) return;
+
+    // Apply blank detection parameters
+    if (data.parameters && data.parameters.blank_detection) {
+        const params = data.parameters.blank_detection;
+
+        document.getElementById('varianceThreshold').value = params.variance_threshold || 100;
+        document.getElementById('edgeThreshold').value = params.edge_threshold || 50;
+        document.getElementById('whitePixelRatio').value = params.white_pixel_ratio || 0.95;
+        document.getElementById('useEdgeDetection').checked = params.use_edge_detection !== false;
+    }
+
+    // Apply duplicate detection parameters
+    if (data.parameters && data.parameters.duplicate_detection) {
+        const params = data.parameters.duplicate_detection;
+        const dupElem = document.getElementById('enableDuplicateDetection');
+        if (dupElem) dupElem.checked = params.enabled !== false;
+        const hashElem = document.getElementById('hashAlgorithm');
+        if (hashElem && params.hash_algorithm) hashElem.value = params.hash_algorithm;
+        const simElem = document.getElementById('similarityThreshold');
+        if (simElem && typeof params.similarity_threshold !== 'undefined') simElem.value = params.similarity_threshold;
+        const hamElem = document.getElementById('hammingDistance');
+        if (hamElem && typeof params.hamming_distance_threshold !== 'undefined') hamElem.value = params.hamming_distance_threshold;
+    }
+
+    // Expand config section if collapsed
+    if (configContent.style.display === 'none') {
+        toggleConfig();
+    }
+}
+
+        // Show metadata if available
+        if (data.metadata) {
+            let metadataText = '';
+
+            if (data.metadata.overall_confidence) {
+                const confidence = (data.metadata.overall_confidence * 100).toFixed(1);
+                metadataText += `Overall Confidence: ${confidence}% | `;
+            }
+
+            if (data.metadata.sample_count) {
+                metadataText += `Samples: ${data.metadata.sample_count.blank} blank, ${data.metadata.sample_count.non_blank} non-blank | `;
+            }
+
+            if (data.metadata.samples_used) {
+                metadataText += `Samples Used: ${data.metadata.samples_used} | `;
+            }
+
+            if (data.metadata.performance) {
+                const perf = data.metadata.performance;
+                metadataText += `Accuracy: ${(perf.accuracy * 100).toFixed(1)}%, F1: ${perf.f1_score.toFixed(3)}`;
+            }
+
+            if (metadataText) {
+                presetMetadata.querySelector('small').textContent = metadataText;
+                presetMetadata.style.display = 'block';
+            } else {
+                presetMetadata.style.display = 'none';
+            }
+        } else {
+            presetMetadata.style.display = 'none';
+        }
+
+        // Show success feedback
+        loadPresetBtn.textContent = '✓ Loaded!';
+        setTimeout(() => {
+            loadPresetBtn.textContent = 'Load Selected Preset';
+            loadPresetBtn.disabled = false;
+        }, 2000);
+
+        // Expand config section if collapsed
+        if (configContent.style.display === 'none') {
+            toggleConfig();
+        }
 
     } catch (error) {
         console.error('Error loading preset:', error);
@@ -772,9 +708,17 @@ async function loadSelectedPreset() {
 
 // Page Selection Functions
 function showPageSelection(result) {
-    console.log('📄 showPageSelection called with result:', result);
     currentPages = result.pages || [];
-    console.log('Total pages:', currentPages.length);
+
+    // Store original statistics for later display
+    originalStats = {
+        total_pages: result.total_pages,
+        blank_pages: result.blank_pages,
+        non_blank_pages: result.total_pages - result.blank_pages,
+        duplicate_pages: result.duplicate_reports,  // duplicate_reports field holds duplicate page count
+        unique_pages: result.unique_reports,  // unique_reports field holds unique page count
+        processing_time: result.processing_time_seconds
+    };
 
     pageSelectionSection.style.display = 'block';
     resultsSection.style.display = 'none';
@@ -859,16 +803,9 @@ function selectOnlyUniques() {
     updateSelectionCount();
 }
 
-async function generatePdfWithSelection(event) {
-    console.log('🔥 generatePdfWithSelection CALLED!');
-    console.log('Event:', event);
-    console.log('Button element:', generatePdfBtn);
-    console.log('Button disabled?', generatePdfBtn.disabled);
-
+async function generatePdfWithSelection() {
     const checkboxes = document.querySelectorAll('.page-checkbox:checked');
     const selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.dataset.pageIndex));
-
-    console.log('Generate PDF clicked - Selected indices:', selectedIndices);
 
     if (selectedIndices.length === 0) {
         alert('Please select at least one page');
@@ -878,8 +815,6 @@ async function generatePdfWithSelection(event) {
     try {
         generatePdfBtn.disabled = true;
         generatePdfBtn.textContent = 'Generating PDF...';
-
-        console.log('Sending request to /api/generate-pdf with job_id:', currentJobId);
 
         const response = await fetch('/api/generate-pdf', {
             method: 'POST',
@@ -892,30 +827,47 @@ async function generatePdfWithSelection(event) {
             })
         });
 
-        console.log('Response status:', response.status);
-
         if (!response.ok) {
             const error = await response.json();
-            console.error('API error:', error);
             throw new Error(error.detail || 'Failed to generate PDF');
         }
 
         const result = await response.json();
-        console.log('PDF generated successfully:', result);
 
-        // Show success and provide download
+        // Calculate statistics
+        const uniquePageCount = originalStats ? originalStats.unique_pages : 0;
+        const duplicatesKept = selectedIndices.length - uniquePageCount;
+
+        // Show success and provide download with comprehensive statistics
         pageSelectionSection.style.display = 'none';
         resultsSection.style.display = 'block';
         resultsSection.scrollIntoView({ behavior: 'smooth' });
 
+        // Display comprehensive statistics
         resultsSummary.innerHTML = `
             <div class="stat-card">
-                <div class="stat-value">${selectedIndices.length}</div>
-                <div class="stat-label">Pages Selected</div>
+                <div class="stat-value">${originalStats ? originalStats.total_pages : 0}</div>
+                <div class="stat-label">Original Total Pages</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${originalStats ? originalStats.blank_pages : 0}</div>
+                <div class="stat-label">Blank Pages Removed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${originalStats ? originalStats.duplicate_pages : 0}</div>
+                <div class="stat-label">Duplicate Pages Found</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${originalStats ? originalStats.unique_pages : 0}</div>
+                <div class="stat-label">Unique Pages</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${duplicatesKept > 0 ? duplicatesKept : 0}</div>
+                <div class="stat-label">Duplicates Kept</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value">${result.page_count}</div>
-                <div class="stat-label">Pages in PDF</div>
+                <div class="stat-label">Final PDF Pages</div>
             </div>
         `;
 
@@ -931,7 +883,8 @@ async function generatePdfWithSelection(event) {
             </div>
         `;
 
-        console.log('Results displayed, PDF ready for download');
+        // Reload jobs list
+        loadJobs();
 
     } catch (error) {
         console.error('Error generating PDF:', error);

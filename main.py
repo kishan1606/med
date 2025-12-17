@@ -4,9 +4,8 @@ Medical Report PDF Processor - Main Entry Point
 This script orchestrates the entire processing pipeline:
 1. Extract pages from PDF
 2. Remove blank pages
-3. Split into individual reports
-4. Detect and remove duplicates
-5. Save processed reports
+3. Detect and remove duplicate pages
+4. Save processed PDF
 """
 
 import logging
@@ -22,7 +21,7 @@ from config.config import get_config, ensure_directories
 # Import processing modules
 from src.pdf_processor import PDFProcessor
 from src.image_analyzer import ImageAnalyzer
-from src.report_splitter import ReportSplitter
+# from src.report_splitter import ReportSplitter  # COMMENTED OUT: Report splitting disabled
 from src.duplicate_detector import DuplicateDetector
 from src.file_manager import FileManager
 
@@ -85,23 +84,22 @@ def process_pdf(input_path: str, output_dir: str, config: dict) -> dict:
         "total_pages": 0,
         "blank_pages": 0,
         "non_blank_pages": 0,
-        "reports_found": 0,
-        "unique_reports": 0,
-        "duplicate_reports": 0,
+        "duplicate_pages": 0,
+        "unique_pages": 0,
         "success": False,
         "error": None,
     }
 
     try:
         # Step 1: Extract pages from PDF
-        logger.info("Step 1/5: Extracting pages from PDF...")
+        logger.info("Step 1/4: Extracting pages from PDF...")
         pdf_processor = PDFProcessor(**config["pdf"])
         pages = pdf_processor.extract_pages(input_path)
         stats["total_pages"] = len(pages)
         logger.info(f"Extracted {len(pages)} pages")
 
         # Step 2: Remove blank pages
-        logger.info("Step 2/5: Detecting and removing blank pages...")
+        logger.info("Step 2/4: Detecting and removing blank pages...")
         image_analyzer = ImageAnalyzer(**config["blank_detection"])
         non_blank_pages, non_blank_indices, metrics = image_analyzer.filter_blank_pages(pages)
         stats["non_blank_pages"] = len(non_blank_pages)
@@ -117,153 +115,56 @@ def process_pdf(input_path: str, output_dir: str, config: dict) -> dict:
             stats["error"] = "No non-blank pages found"
             return stats
 
-        # Enforce dependency: If report splitting is disabled, duplicate detection must be disabled
-        report_splitting_enabled = config.get("report_splitting", {}).get("enabled", True)
+        # Step 3: Detect and remove duplicate pages (conditional)
         duplicate_detection_enabled = config.get("duplicate_detection", {}).get("enabled", True)
 
-        if not report_splitting_enabled:
-            duplicate_detection_enabled = False
-            logger.info("Duplicate detection disabled because report splitting is disabled (dependency)")
-
-        # Step 3: Split into individual reports (conditional)
-        if report_splitting_enabled:
-            logger.info("Step 3/5: Splitting into individual reports...")
-            # Remove 'enabled' key before passing to ReportSplitter
-            splitting_config = {k: v for k, v in config["report_splitting"].items() if k != "enabled"}
-            report_splitter = ReportSplitter(**splitting_config)
-            reports = report_splitter.split_reports(non_blank_pages)
-            stats["reports_found"] = len(reports)
-            logger.info(f"Identified {len(reports)} reports")
-        else:
-            logger.info("Step 3/5: Skipping report splitting (disabled)")
-            logger.info("Step 4/5: Skipping duplicate detection (disabled - dependency)")
-
-            # Save single PDF with blank pages removed
-            logger.info("Step 5/5: Saving PDF with blank pages removed...")
-            file_manager = FileManager(output_dir, **config["file_management"])
-
-            # Create metadata for the single cleaned PDF
-            metadata = {
-                "original_page_indices": list(range(len(non_blank_pages))),
-                "total_pages": stats["total_pages"],
-                "blank_pages_removed": stats["blank_pages"],
-                "processing_mode": "blank_removal_only",
-            }
-
-            # Save as single cleaned PDF
-            saved = file_manager.save_report(non_blank_pages, 1, metadata, original_filename)
-            saved_files = [saved]
-            stats["saved_files"] = saved_files
-            stats["reports_found"] = 1
-            stats["unique_reports"] = 1
-            stats["duplicate_reports"] = 0
-
-            # Create processing log
-            file_manager.create_processing_log(stats)
-            output_summary = file_manager.get_output_summary()
-            stats["output_summary"] = output_summary
-            stats["success"] = True
-            stats["end_time"] = datetime.now().isoformat()
-
-            logger.info("Blank pages removed and PDF saved")
-            logger.info(f"Output directory: {output_dir}")
-            return stats
-
-        # Step 4: Detect and remove duplicates (conditional)
         if duplicate_detection_enabled:
-            logger.info("Step 4/5: Detecting duplicate reports...")
+            logger.info("Step 3/4: Detecting duplicate pages...")
             # Remove 'enabled' key before passing to DuplicateDetector
             dedup_config = {k: v for k, v in config["duplicate_detection"].items() if k != "enabled"}
             duplicate_detector = DuplicateDetector(**dedup_config)
 
-            # Convert Report objects to lists of pages
-            report_pages_list = [report.pages for report in reports]
+            # Treat each page as a separate "report" for duplicate detection
+            page_list = [[page] for page in non_blank_pages]
 
-            # Find duplicates and get unique reports
-            unique_indices, duplicate_pairs = duplicate_detector.find_duplicates(report_pages_list)
-            unique_reports = [report_pages_list[i] for i in unique_indices]
+            # Find duplicates and get unique pages
+            unique_indices, duplicate_pairs = duplicate_detector.find_duplicates(page_list)
+            unique_pages = [non_blank_pages[i] for i in unique_indices]
 
-            stats["unique_reports"] = len(unique_reports)
-            stats["duplicate_reports"] = stats["reports_found"] - stats["unique_reports"]
+            stats["unique_pages"] = len(unique_pages)
+            stats["duplicate_pages"] = stats["non_blank_pages"] - stats["unique_pages"]
             logger.info(
-                f"Found {stats['duplicate_reports']} duplicates, "
-                f"{stats['unique_reports']} unique reports"
+                f"Found {stats['duplicate_pages']} duplicate pages, "
+                f"{stats['unique_pages']} unique pages remaining"
             )
         else:
-            logger.info("Step 4/5: Skipping duplicate detection (disabled)")
+            logger.info("Step 3/4: Skipping duplicate detection (disabled)")
+            unique_pages = non_blank_pages
+            stats["unique_pages"] = len(unique_pages)
+            stats["duplicate_pages"] = 0
 
-            # Save all split reports without deduplication
-            logger.info("Step 5/5: Saving split reports (with duplicates)...")
-            file_manager = FileManager(output_dir, **config["file_management"])
-
-            # Save all reports
-            report_pages_list = [report.pages for report in reports]
-            saved_files = []
-            for idx, report in enumerate(reports):
-                metadata = {
-                    "original_page_indices": report.page_indices,
-                    "report_number": idx + 1,
-                    "total_reports": len(reports),
-                    "processing_mode": "split_without_dedup",
-                    **report.metadata,
-                }
-                saved = file_manager.save_report(report.pages, idx + 1, metadata, original_filename)
-                saved_files.append(saved)
-
-            stats["saved_files"] = saved_files
-            stats["unique_reports"] = len(reports)
-            stats["duplicate_reports"] = 0
-
-            # Create processing log
-            file_manager.create_processing_log(stats)
-            output_summary = file_manager.get_output_summary()
-            stats["output_summary"] = output_summary
-            stats["success"] = True
-            stats["end_time"] = datetime.now().isoformat()
-
-            logger.info(f"Saved {len(reports)} split reports (duplicates not removed)")
-            logger.info(f"Output directory: {output_dir}")
-            return stats
-
-        # Step 5: Save processed reports (full pipeline with deduplication)
-        logger.info("Step 5/5: Saving unique processed reports...")
+        # Step 4: Save processed PDF
+        logger.info("Step 4/4: Saving processed PDF...")
         file_manager = FileManager(output_dir, **config["file_management"])
 
-        # Create metadata for each report
-        reports_metadata = []
-        for idx, report_idx in enumerate(unique_indices):
-            original_report = reports[report_idx]
-            metadata = {
-                "original_page_indices": original_report.page_indices,
-                "report_number": idx + 1,
-                "total_unique_reports": len(unique_reports),
-                "processing_mode": "full_pipeline",
-                **original_report.metadata,
-            }
-            reports_metadata.append(metadata)
+        # Create metadata for the processed PDF
+        metadata = {
+            "original_page_indices": list(range(len(unique_pages))),
+            "total_pages": stats["total_pages"],
+            "blank_pages_removed": stats["blank_pages"],
+            "duplicate_pages_removed": stats["duplicate_pages"],
+            "processing_mode": "blank_removal_and_deduplication" if duplicate_detection_enabled else "blank_removal_only",
+        }
 
-        # Save all reports with progress bar
-        logger.info(f"Saving {len(unique_reports)} reports to {output_dir}")
-        saved_files = []
-        for idx, (pages, metadata) in enumerate(
-            tqdm(
-                zip(unique_reports, reports_metadata),
-                total=len(unique_reports),
-                desc="Saving reports",
-            )
-        ):
-            saved = file_manager.save_report(pages, idx + 1, metadata, original_filename)
-            saved_files.append(saved)
-
+        # Save as single processed PDF
+        saved = file_manager.save_report(unique_pages, 1, metadata, original_filename)
+        saved_files = [saved]
         stats["saved_files"] = saved_files
 
         # Create processing log
         file_manager.create_processing_log(stats)
-
-        # Get output summary
         output_summary = file_manager.get_output_summary()
         stats["output_summary"] = output_summary
-
         stats["success"] = True
         stats["end_time"] = datetime.now().isoformat()
 
@@ -271,9 +172,8 @@ def process_pdf(input_path: str, output_dir: str, config: dict) -> dict:
         logger.info("Processing completed successfully!")
         logger.info(f"Total pages processed: {stats['total_pages']}")
         logger.info(f"Blank pages removed: {stats['blank_pages']}")
-        logger.info(f"Reports identified: {stats['reports_found']}")
-        logger.info(f"Duplicate reports: {stats['duplicate_reports']}")
-        logger.info(f"Unique reports saved: {stats['unique_reports']}")
+        logger.info(f"Duplicate pages removed: {stats['duplicate_pages']}")
+        logger.info(f"Unique pages saved: {stats['unique_pages']}")
         logger.info(f"Output directory: {output_dir}")
         logger.info("=" * 80)
 

@@ -11,7 +11,7 @@
         <!-- Header -->
         <header class="header">
             <h1>📄 Medical Report PDF Processor</h1>
-            <p class="subtitle">Extract, split, and deduplicate medical reports from scanned PDFs</p>
+            <p class="subtitle">Remove blank pages and deduplicate medical report PDFs</p>
             <div class="health-status" id="healthStatus">
                 <span class="status-dot"></span>
                 <span>Checking status...</span>
@@ -55,8 +55,8 @@
                         </label>
                         <select id="configPreset" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
                             <option value="current">Current (Default)</option>
-                            <option value="optimized" disabled>Optimized (Not Available)</option>
-                            <option value="tuned" disabled>Tuned (Not Available)</option>
+                            <option value="optimized">Optimized</option>
+                            <option value="tuned">Tuned</option>
                         </select>
                         <small class="help-text" id="presetDescription" style="display: block; margin-top: 0.5rem; color: #666;">
                             Current default configuration from config.py
@@ -65,9 +65,14 @@
                             <small style="color: #0066cc;"></small>
                         </div>
                     </div>
-                    <button class="btn-secondary" id="loadPreset" style="margin-top: 0.5rem; width: 100%;">
-                        Load Selected Preset
-                    </button>
+                    <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+                        <button class="btn-secondary" id="loadPreset" style="flex:1;">
+                            Load Selected Preset
+                        </button>
+                        <button class="btn-secondary" id="applyOptimizedBtn" style="padding:0 0.75rem;" disabled>
+                            Apply Optimized
+                        </button>
+                    </div>
                 </div>
 
                 <div class="config-content" id="configContent" style="display: none;">
@@ -107,6 +112,7 @@
                     </div>
 
                     <!-- Report Splitting Settings -->
+                    <!-- COMMENTED OUT: Report splitting functionality disabled
                     <div class="config-group">
                         <h3>Report Splitting</h3>
                         <div class="form-group">
@@ -137,6 +143,7 @@
                             <small class="help-text">0-100 (50 for poor scans, 75 for high quality)</small>
                         </div>
                     </div>
+                    -->
 
                     <!-- Duplicate Detection Settings -->
                     <div class="config-group">
@@ -146,8 +153,7 @@
                                 <input type="checkbox" id="enableDuplicateDetection" checked>
                                 <strong>Enable Duplicate Detection</strong>
                             </label>
-                            <small class="help-text">Detect and remove duplicate reports. Uncheck to keep all reports even if duplicated.</small>
-                            <small class="help-text" style="color: #666; font-style: italic;">Note: Requires Report Splitting to be enabled</small>
+                            <small class="help-text">Detect and remove duplicate pages. Uncheck to keep all pages even if duplicated.</small>
                         </div>
                         <div class="form-group">
                             <label for="hashAlgorithm">Hash Algorithm:</label>
@@ -192,6 +198,26 @@
                 <p class="progress-detail" id="progressDetail" style="margin-top: 0.5rem; color: #666;"></p>
             </section>
 
+            <!-- Page Selection Section (for duplicates) -->
+            <section class="card page-selection-section" id="pageSelectionSection" style="display: none;">
+                <h2>🔍 Duplicate Pages Detected - Select Pages to Keep</h2>
+                <p class="help-text" style="margin-bottom: 1rem;">
+                    We found duplicate pages in your PDF. Please review and uncheck any pages you want to remove from the final PDF.
+                </p>
+                <div class="selection-controls" style="margin-bottom: 1rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <button class="btn-secondary" id="selectAllBtn">Select All</button>
+                    <button class="btn-secondary" id="deselectAllBtn">Deselect All</button>
+                    <button class="btn-secondary" id="selectUniquesBtn">Keep Only Unique Pages</button>
+                    <span style="margin-left: auto; font-weight: bold;" id="selectionCount">0 pages selected</span>
+                </div>
+                <div id="pagesGrid" class="pages-grid"></div>
+                <div class="action-section" style="margin-top: 1.5rem;">
+                    <button class="btn-primary" id="generatePdfBtn" disabled>
+                        Generate PDF with Selected Pages
+                    </button>
+                </div>
+            </section>
+
             <!-- Results Section -->
             <section class="card results-section" id="resultsSection" style="display: none;">
                 <h2>Results</h2>
@@ -200,13 +226,13 @@
             </section>
 
             <!-- Jobs History Section -->
-            <section class="card jobs-section">
+            <!-- <section class="card jobs-section">
                 <div class="section-header">
                     <h2>Processing History</h2>
                     <button class="btn-secondary" id="refreshJobs">Refresh</button>
                 </div>
                 <div id="jobsContainer" class="jobs-container"></div>
-            </section>
+            </section> -->
         </main>
 
         <!-- Footer -->

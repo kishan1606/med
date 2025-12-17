@@ -1,6 +1,6 @@
 # Project Overview
 
-Medical Report PDF Processor - A Python application with both web UI and CLI that processes scanned medical report PDFs by extracting individual reports, removing blank pages, detecting duplicates, and saving processed reports separately. Features optional report splitting and duplicate detection that can be enabled/disabled via UI or configuration.
+Medical Report PDF Processor - A Python application with both web UI and CLI that processes scanned medical report PDFs by removing blank pages, detecting duplicate pages, and saving the cleaned PDF. **Report splitting functionality has been disabled** - the application now processes the entire PDF as a single document and detects duplicates at the page level instead of the report level.
 
 ## Tech Stack
 
@@ -13,7 +13,7 @@ Medical Report PDF Processor - A Python application with both web UI and CLI tha
     - Pillow (PIL) - Image manipulation
     - OpenCV - Image analysis and blank page detection
     - imagehash - Perceptual hashing for duplicate detection
-    - pytesseract - OCR for pattern detection (optional)
+        - pytesseract - OCR for pattern detection (no longer needed - report splitting disabled)
     - img2pdf - PDF generation
   - **Web & API**:
     - FastAPI - Web framework and REST API
@@ -32,8 +32,8 @@ Medical Report PDF Processor - A Python application with both web UI and CLI tha
 /src                    - Core processing modules
   - pdf_processor.py      # PDF extraction and page-to-image conversion
   - image_analyzer.py     # Blank page detection using image analysis
-  - report_splitter.py    # Pattern detection and report boundary identification
-  - duplicate_detector.py # Hash-based duplicate report detection
+  - report_splitter.py    # Pattern detection and report boundary identification (DISABLED)
+  - duplicate_detector.py # Hash-based duplicate page detection
   - file_manager.py       # Output file management and saving
 /app                    - Web application (FastAPI)
   /api                    # API routes and models
@@ -74,10 +74,7 @@ CLAUDE.md               - Project instructions (this file)
 
 ### Prerequisites
 - Python 3.8 or higher
-- Tesseract OCR (optional, for pattern detection)
-  - Windows: Download from https://github.com/UB-Mannheim/tesseract/wiki
-  - Mac: `brew install tesseract`
-  - Linux: `sudo apt-get install tesseract-ocr`
+- ~~Tesseract OCR~~ (no longer needed - report splitting disabled)
 
 ### Installation
 ```bash
@@ -132,7 +129,8 @@ python tools/run_with_config.py --config optimized --input input/reports.pdf
 ### Architecture
 - Modular design with single-responsibility principle
 - Each module handles one specific aspect of processing
-- Flexible pipeline architecture: PDF → Extract → Analyze → [Optional: Split] → [Optional: Detect Duplicates] → Save
+- **Simplified pipeline architecture: PDF → Extract → Remove Blank Pages → [Optional: Detect Duplicate Pages] → Save**
+- Report splitting functionality has been disabled
 - Web UI and CLI both use the same core processing modules
 - Async processing with background tasks for web API
 - Real-time progress updates via WebSockets
@@ -150,8 +148,8 @@ python tools/run_with_config.py --config optimized --input input/reports.pdf
 - `main.py` - CLI entry point, orchestrates the entire processing pipeline
 - `src/pdf_processor.py` - PDF extraction using PyMuPDF, converts pages to images
 - `src/image_analyzer.py` - Analyzes images for blank detection using OpenCV
-- `src/report_splitter.py` - Detects report boundaries using pattern matching/OCR
-- `src/duplicate_detector.py` - Uses perceptual hashing to find duplicate reports
+- `src/report_splitter.py` - Detects report boundaries using pattern matching/OCR (DISABLED - code kept for reference)
+- `src/duplicate_detector.py` - Uses perceptual hashing to find duplicate pages (now operates at page level)
 - `src/file_manager.py` - Handles file I/O and saving processed reports
 
 **Web Application:**
@@ -184,23 +182,25 @@ python tools/run_with_config.py --config optimized --input input/reports.pdf
 
 ## Processing Pipeline
 
-The pipeline consists of 5 steps, where Steps 3 and 4 can be optionally disabled:
+**UPDATED: Report splitting has been disabled. The pipeline now consists of 4 steps:**
 
 1. **PDF Extraction** - Convert PDF pages to images (PyMuPDF) - *Always runs*
 2. **Blank Detection** - Identify and filter out blank pages (OpenCV) - *Always runs*
-3. **Report Splitting** - Detect report boundaries using headers/footers (OCR/pattern matching) - *Optional (enabled by default)*
-   - Can be disabled via `report_splitting.enabled = False` in config or via UI checkbox
-   - When disabled, treats entire PDF as a single report
-4. **Duplicate Detection** - Compare reports using perceptual hashing (imagehash) - *Optional (enabled by default)*
+3. **Duplicate Detection** - Compare pages using perceptual hashing (imagehash) - *Optional (enabled by default)*
    - Can be disabled via `duplicate_detection.enabled = False` in config or via UI checkbox
-   - When disabled, keeps all reports even if they are duplicates
-5. **Save Output** - Generate individual PDFs for each unique report - *Always runs*
+   - When disabled, keeps all pages even if they are duplicates
+   - Now operates at page level instead of report level
+4. **Save Output** - Generate cleaned PDF with duplicate pages removed - *Always runs*
 
 **Processing Modes:**
-- Full pipeline: All 5 steps (default)
-- Blank removal only: Steps 1, 2, 5 (fastest, just cleans up PDF)
-- Split without dedup: Steps 1, 2, 3, 5 (keeps all report copies)
-- Custom: Any combination based on needs
+- Full pipeline (default): Steps 1, 2, 3, 4 - Remove blank pages and duplicates
+- Blank removal only: Steps 1, 2, 4 - Just clean up blank pages, keep duplicates
+
+**Key Changes:**
+- Report splitting (Step 3 in old pipeline) is now **disabled**
+- The entire PDF is now treated as a single document
+- Duplicate detection now works on individual pages instead of multi-page reports
+- Output is always a single PDF file (not multiple split reports)
 
 ## Additional Context
 
@@ -210,7 +210,7 @@ Important considerations:
   - Web UI runs on localhost only by default
 - **Performance**: Large PDFs may require batch processing to manage memory
   - Use lower DPI (150) for faster processing
-  - Consider disabling report splitting/dedup if not needed
+  - Consider disabling duplicate detection if not needed
 - **Accuracy**: Blank page detection threshold may need tuning based on scan quality
   - Use `tools/optimize_parameters.py` to find optimal parameters for your PDFs
   - Use `tools/interactive_tuner.py` for visual fine-tuning
@@ -218,12 +218,11 @@ Important considerations:
   - **current**: Default config from config.py
   - **optimized**: Auto-generated optimal parameters (run `tools/optimize_parameters.py`)
   - **tuned**: Manually tuned parameters (run `tools/interactive_tuner.py`)
-- **Optional Processing**: Steps 3 and 4 can be disabled
-  - Disable report splitting for single-report PDFs (faster processing)
-  - Disable duplicate detection when you want to manually review all reports
-  - Both can be toggled via web UI or configuration files
-- **OCR Dependency**: Tesseract OCR needed for pattern detection; architecture supports non-OCR fallback
-- **Duplicate Threshold**: Similarity threshold (default 95%) may need adjustment
+- **Optional Processing**: Duplicate detection can be disabled
+  - Disable duplicate detection when you want to keep all pages
+  - Can be toggled via web UI or configuration files
+- **OCR Dependency**: Tesseract OCR no longer required (report splitting disabled)
+- **Duplicate Threshold**: Similarity threshold (default 95%) may need adjustment for page-level comparison
 - **Image Quality**: Processing assumes reasonable scan quality (150+ DPI recommended)
 - **API Endpoints**: Web UI provides REST API for integration
   - `/api/upload` - Upload PDF files
@@ -231,4 +230,4 @@ Important considerations:
   - `/api/jobs/{job_id}` - Get job status
   - `/api/configs/list` - List available config presets
   - `/api/configs/{name}` - Get specific config preset
-  - `/api/download/{filename}` - Download processed reports
+  - `/api/download/{filename}` - Download processed PDF

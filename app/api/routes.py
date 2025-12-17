@@ -24,6 +24,8 @@ from app.api.models import (
     ConfigurationRequest,
     ConfigurationResponse,
     ProcessingStatus,
+    GeneratePDFRequest,
+    GeneratePDFResponse,
 )
 from app.core.tasks import job_manager
 from app.core.processor import process_pdf_async
@@ -157,11 +159,8 @@ async def process_pdf(
     # Convert configuration to nested dict structure if needed
     processing_config = None
     if configuration:
-        # Enforce dependency: If report splitting is disabled, duplicate detection must also be disabled
+        # Report splitting is now disabled - only duplicate detection is configurable
         enable_duplicate = configuration.enable_duplicate_detection
-        if not configuration.enable_report_splitting:
-            enable_duplicate = False
-            logger.info("Duplicate detection disabled because report splitting is disabled (dependency)")
 
         processing_config = {
             "pdf": {
@@ -175,12 +174,10 @@ async def process_pdf(
                 "white_pixel_ratio": configuration.white_pixel_ratio,
                 "use_edge_detection": configuration.use_edge_detection,
             },
-            "report_splitting": {
-                "enabled": configuration.enable_report_splitting,
-                "use_ocr": configuration.use_ocr,
-                "ocr_language": configuration.ocr_language,
-                "min_confidence": configuration.min_confidence,
-            },
+            # Report splitting disabled - configuration commented out
+            # "report_splitting": {
+            #     "enabled": False,
+            # },
             "duplicate_detection": {
                 "enabled": enable_duplicate,
                 "hash_algorithm": configuration.hash_algorithm,
@@ -486,3 +483,113 @@ async def websocket_progress(websocket: WebSocket, job_id: str):
                 break
     finally:
         job_manager.unregister_progress_callbacks(job_id)
+
+
+@router.get("/preview/{job_id}/{filename}")
+async def get_page_preview(job_id: str, filename: str):
+    """
+    Serve page preview images for user selection.
+
+    Args:
+        job_id: Job identifier
+        filename: Preview image filename (e.g., page_0.jpg)
+
+    Returns:
+        Image file
+    """
+    from pathlib import Path
+
+    base_dir = Path(__file__).parent.parent.parent
+    preview_path = base_dir / "output" / "temp" / f"job_{job_id}" / filename
+
+    if not preview_path.exists():
+        raise HTTPException(status_code=404, detail="Preview image not found")
+
+    return FileResponse(preview_path, media_type="image/jpeg")
+
+
+@router.post("/generate-pdf", response_model=GeneratePDFResponse)
+async def generate_pdf_with_selection(request: GeneratePDFRequest):
+    """
+    Generate final PDF with user-selected pages.
+
+    Args:
+        request: Contains job_id and selected page indices
+
+    Returns:
+        PDF generation result with download URL
+    """
+    import pickle
+    from pathlib import Path
+    from src.file_manager import FileManager
+    from config.config import get_config
+
+    try:
+        job_id = request.job_id
+        selected_indices = request.selected_page_indices
+
+        logger.info(f"Generating PDF for job {job_id} with {len(selected_indices)} selected pages")
+
+        # Load cached pages
+        base_dir = Path(__file__).parent.parent.parent
+        cache_dir = base_dir / "output" / "temp" / f"job_{job_id}"
+        pages_cache_path = cache_dir / "pages.pkl"
+
+        if not pages_cache_path.exists():
+            raise HTTPException(status_code=404, detail="Job cache not found. Please re-process the PDF.")
+
+        with open(pages_cache_path, 'rb') as f:
+            all_pages = pickle.load(f)
+
+        # Select only the pages user chose
+        selected_pages = [all_pages[i] for i in selected_indices if i < len(all_pages)]
+
+        if not selected_pages:
+            raise HTTPException(status_code=400, detail="No valid pages selected")
+
+        # Generate PDF
+        config = get_config()
+        output_dir = base_dir / "output"
+        file_manager = FileManager(str(output_dir), **config["file_management"])
+
+        # Get original filename from job manager
+        job_status = job_manager.get_job(job_id)
+        if not job_status:
+            original_filename = "processed"
+        else:
+            import re
+            original_filename = re.sub(r'\.pdf$', '', job_status.get('filename', 'processed'))
+
+        metadata = {
+            "original_page_indices": selected_indices,
+            "total_pages_selected": len(selected_pages),
+            "user_selected": True,
+            "processing_mode": "user_selection",
+        }
+
+        saved = file_manager.save_report(selected_pages, 1, metadata, original_filename)
+
+        if "pdf" not in saved:
+            raise HTTPException(status_code=500, detail="Failed to generate PDF")
+
+        pdf_path = Path(saved["pdf"])
+        file_size_mb = pdf_path.stat().st_size / (1024 * 1024)
+
+        # Clean up temp files
+        import shutil
+        if cache_dir.exists():
+            shutil.rmtree(cache_dir, ignore_errors=True)
+
+        return GeneratePDFResponse(
+            success=True,
+            filename=pdf_path.name,
+            download_url=f"/api/download/{pdf_path.name}",
+            page_count=len(selected_pages),
+            message=f"PDF generated successfully with {len(selected_pages)} pages"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating PDF: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {str(e)}")

@@ -29,15 +29,15 @@ class ConfigurationRequest(BaseModel):
     white_pixel_ratio: Optional[float] = Field(0.95, description="White pixel ratio for blank detection")
     use_edge_detection: Optional[bool] = Field(True, description="Enable Canny edge detection")
 
-    # Report splitting settings
-    enable_report_splitting: Optional[bool] = Field(True, description="Enable report splitting (default: True)")
-    use_ocr: Optional[bool] = Field(True, description="Enable OCR for pattern detection")
-    ocr_language: Optional[str] = Field("eng", description="Tesseract language code")
-    min_confidence: Optional[int] = Field(60, description="Minimum OCR confidence score (0-100)")
-    header_keywords: Optional[List[str]] = Field(
-        default=None,
-        description="Keywords to detect in report headers"
-    )
+    # Report splitting settings - COMMENTED OUT: Report splitting disabled
+    # enable_report_splitting: Optional[bool] = Field(True, description="Enable report splitting (default: True)")
+    # use_ocr: Optional[bool] = Field(True, description="Enable OCR for pattern detection")
+    # ocr_language: Optional[str] = Field("eng", description="Tesseract language code")
+    # min_confidence: Optional[int] = Field(60, description="Minimum OCR confidence score (0-100)")
+    # header_keywords: Optional[List[str]] = Field(
+    #     default=None,
+    #     description="Keywords to detect in report headers"
+    # )
 
     # Duplicate detection settings
     enable_duplicate_detection: Optional[bool] = Field(True, description="Enable duplicate detection (default: True)")
@@ -54,6 +54,15 @@ class ProcessRequest(BaseModel):
     """Request model for processing job"""
     filename: str = Field(..., description="Name of the uploaded PDF file")
     configuration: Optional[ConfigurationRequest] = Field(None, description="Optional custom configuration")
+
+
+class PageInfo(BaseModel):
+    """Information about a single page"""
+    page_index: int = Field(..., description="Original page index")
+    page_number: int = Field(..., description="Page number (1-indexed)")
+    is_duplicate: bool = Field(..., description="Whether this page is a duplicate")
+    duplicate_of: Optional[int] = Field(None, description="Index of the page this is a duplicate of")
+    preview_url: Optional[str] = Field(None, description="URL to page preview image")
 
 
 class ReportInfo(BaseModel):
@@ -85,6 +94,8 @@ class ProcessingResult(BaseModel):
     duplicate_reports: int = Field(..., description="Number of duplicate reports removed")
     unique_reports: int = Field(..., description="Number of unique reports saved")
     reports: List[ReportInfo] = Field(..., description="List of processed reports")
+    pages: Optional[List[PageInfo]] = Field(None, description="Detailed page information with duplicates")
+    requires_user_selection: bool = Field(False, description="Whether user needs to select pages")
     processing_time_seconds: float = Field(..., description="Total processing time")
     error: Optional[str] = Field(None, description="Error message if processing failed")
 
@@ -145,4 +156,19 @@ class DeleteJobResponse(BaseModel):
 class ConfigurationResponse(BaseModel):
     """Response model for current configuration"""
     configuration: Dict[str, Any] = Field(..., description="Current configuration settings")
+    message: str = Field(..., description="Response message")
+
+
+class GeneratePDFRequest(BaseModel):
+    """Request model for generating PDF with selected pages"""
+    job_id: str = Field(..., description="Job identifier from processing")
+    selected_page_indices: List[int] = Field(..., description="List of page indices to include in final PDF")
+
+
+class GeneratePDFResponse(BaseModel):
+    """Response model for PDF generation"""
+    success: bool = Field(..., description="Whether PDF generation succeeded")
+    filename: str = Field(..., description="Generated PDF filename")
+    download_url: str = Field(..., description="URL to download the generated PDF")
+    page_count: int = Field(..., description="Number of pages in generated PDF")
     message: str = Field(..., description="Response message")
