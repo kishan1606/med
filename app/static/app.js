@@ -817,19 +817,47 @@ function showPageSelection(result) {
 
     updateSelectionCount();
 
-    // Re-attach the generate PDF button event listener to ensure it works
-    // (in case the button was recreated or DOM was modified)
-    console.log('🔄 Re-attaching generatePdfBtn event listener');
+    // Re-attach all button event listeners to ensure they work
+    console.log('🔄 Re-attaching page selection button event listeners');
+
+    // Re-attach Generate PDF button
     const newGeneratePdfBtn = document.getElementById('generatePdfBtn');
     if (newGeneratePdfBtn) {
-        // Remove any existing listeners by cloning the button
         const oldBtn = newGeneratePdfBtn;
         const newBtn = oldBtn.cloneNode(true);
         oldBtn.parentNode.replaceChild(newBtn, oldBtn);
-
-        // Attach fresh event listener
         newBtn.addEventListener('click', generatePdfWithSelection);
         console.log('✅ Event listener re-attached to generatePdfBtn');
+    }
+
+    // Re-attach Select All button
+    const newSelectAllBtn = document.getElementById('selectAllBtn');
+    if (newSelectAllBtn) {
+        const oldBtn = newSelectAllBtn;
+        const newBtn = oldBtn.cloneNode(true);
+        oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+        newBtn.addEventListener('click', selectAllPages);
+        console.log('✅ Event listener re-attached to selectAllBtn');
+    }
+
+    // Re-attach Deselect All button
+    const newDeselectAllBtn = document.getElementById('deselectAllBtn');
+    if (newDeselectAllBtn) {
+        const oldBtn = newDeselectAllBtn;
+        const newBtn = oldBtn.cloneNode(true);
+        oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+        newBtn.addEventListener('click', deselectAllPages);
+        console.log('✅ Event listener re-attached to deselectAllBtn');
+    }
+
+    // Re-attach Select Uniques button
+    const newSelectUniquesBtn = document.getElementById('selectUniquesBtn');
+    if (newSelectUniquesBtn) {
+        const oldBtn = newSelectUniquesBtn;
+        const newBtn = oldBtn.cloneNode(true);
+        oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+        newBtn.addEventListener('click', selectOnlyUniques);
+        console.log('✅ Event listener re-attached to selectUniquesBtn');
     }
 }
 
